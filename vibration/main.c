@@ -1,16 +1,14 @@
-#include <stdint.h>
+
 #include <stdlib.h>
 #include <math.h>
-#include "nrf.h"
 #include "nrf_soc.h"
-#include "nrf_gpio.h"
-#include "nrf51_bitfields.h"
 #include "nrf_delay.h"
 #include "twi_master.h"
 #include "app_timer.h"
 #include "libjanek.h"
 #include "math.h"
 #include "simple_uart.h"
+#include "slip_ble.h"
 
 #define GSCALE 2
 
@@ -46,6 +44,9 @@ uint8_t acceldata[6];
 
 int main()
 {
+
+    start_ble();
+
     NRF_CLOCK->LFCLKSRC = 0; // RC Timer
 
     NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
@@ -79,6 +80,8 @@ int main()
 
     while (1) {
         nrf_gpio_pin_toggle(15);
+        app_sched_execute();
+
         //MMA_getdata(acceldata);
         //x = acceldata[0] << 8 | acceldata[1];
         //y = acceldata[2] << 8 | acceldata[3];
