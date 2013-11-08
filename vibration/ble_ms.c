@@ -17,10 +17,9 @@
 #include "app_util.h"
 
 
-
 /**@brief Connect event handler.
  *
- * @param[in]   p_ms       LEDButton Service structure.
+ * @param[in]   p_ms      Meeting Service structure.
  * @param[in]   p_ble_evt   Event received from the BLE stack.
  */
 static void on_connect(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
@@ -31,7 +30,7 @@ static void on_connect(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
 
 /**@brief Disconnect event handler.
  *
- * @param[in]   p_ms       LEDButton Service structure.
+ * @param[in]   p_ms       Meeting Service structure.
  * @param[in]   p_ble_evt   Event received from the BLE stack.
  */
 static void on_disconnect(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
@@ -43,7 +42,7 @@ static void on_disconnect(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
 
 /**@brief Write event handler.
  *
- * @param[in]   p_ms       LEDButton Service structure.
+ * @param[in]   p_ms       Meeting Service structure.
  * @param[in]   p_ble_evt   Event received from the BLE stack.
  */
 static void on_write(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
@@ -79,66 +78,7 @@ void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
     }
 }
 
-
-/**@brief Add pending invites characteristic.
- *
- * @param[in]   p_ms        Meeting Service structure.
- * @param[in]   p_ms_init   Information needed to initialize the service.
- *
- * @return      NRF_SUCCESS on success, otherwise an error code.
- */
-static uint32_t pending_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
-{
-    ble_gatts_char_md_t char_md;
-    ble_gatts_attr_t    attr_char_value;
-    ble_uuid_t          ble_uuid;
-    ble_gatts_attr_md_t attr_md;
-    
-
-    memset(&char_md, 0, sizeof(char_md));
-    
-    char_md.char_props.read   = 1;
-    char_md.char_props.write  = 1;
-    char_md.p_char_user_desc  = NULL;
-    char_md.p_char_pf         = NULL;
-    char_md.p_user_desc_md    = NULL;
-    char_md.p_cccd_md         = NULL;
-    char_md.p_sccd_md         = NULL;
-    
-    ble_uuid.type = p_ms->uuid_type;
-    ble_uuid.uuid = MS_UUID_PENDING_CHAR;
-    
-    memset(&attr_md, 0, sizeof(attr_md));
-
-    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
-    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
-    
-    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
-    attr_md.rd_auth    = 0;
-    attr_md.wr_auth    = 0;
-    attr_md.vlen       = 1;
-    
-    memset(&attr_char_value, 0, sizeof(attr_char_value));
-
-    attr_char_value.p_uuid       = &ble_uuid;
-    attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = sizeof(uint16_t);
-    attr_char_value.init_offs    = 0;
-    attr_char_value.max_len      = sizeof(uint16_t) * MAX_LEN;
-    attr_char_value.p_value      = NULL;
-    
-    return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
-                                               &attr_char_value,
-                                               &p_ms->pending_char_handles);
-}
-
-/**@brief Add accepted mugs characteristic.
- *
- * @param[in]   p_ms        Meeting Service structure.
- * @param[in]   p_ms_init   Information needed to initialize the service.
- *
- * @return      NRF_SUCCESS on success, otherwise an error code.
- */
+//Adds accepted chacteristic to Meeting Service
 static uint32_t accepted_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 {
     ble_gatts_char_md_t char_md;
@@ -166,7 +106,7 @@ static uint32_t accepted_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_in
     char_md.p_sccd_md         = NULL;
     
     ble_uuid.type = p_ms->uuid_type;
-    ble_uuid.uuid = MS_UUID_ACCEPTED_CHAR;
+    ble_uuid.uuid = MS_UUID_ACC_CHAR;
 
     memset(&attr_md, 0, sizeof(attr_md));
 
@@ -192,13 +132,7 @@ static uint32_t accepted_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_in
                                                &p_ms->accepted_char_handles);
 }
 
-/**@brief Add declined mugs characteristic.
- *
- * @param[in]   p_ms        Meeting Service structure.
- * @param[in]   p_ms_init   Information needed to initialize the service.
- *
- * @return      NRF_SUCCESS on success, otherwise an error code.
- */
+//Adds declined chacteristic to Meeting Service
 static uint32_t declined_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 {
     ble_gatts_char_md_t char_md;
@@ -252,6 +186,53 @@ static uint32_t declined_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_in
                                                &p_ms->declined_char_handles);
 }
 
+//Adds pending chacteristic to Meeting Service
+static uint32_t pending_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_uuid_t          ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+    
+
+    memset(&char_md, 0, sizeof(char_md));
+    
+    char_md.char_props.read   = 1;
+    char_md.char_props.write  = 1;
+    char_md.p_char_user_desc  = NULL;
+    char_md.p_char_pf         = NULL;
+    char_md.p_user_desc_md    = NULL;
+    char_md.p_cccd_md         = NULL;
+    char_md.p_sccd_md         = NULL;
+    
+    ble_uuid.type = p_ms->uuid_type;
+    ble_uuid.uuid = MS_UUID_PENDING_CHAR;
+    
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth    = 0;
+    attr_md.wr_auth    = 0;
+    attr_md.vlen       = 1;
+    
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.init_len     = sizeof(uint16_t);
+    attr_char_value.init_offs    = 0;
+    attr_char_value.max_len      = sizeof(uint16_t) * MAX_LEN;
+    attr_char_value.p_value      = NULL;
+    
+    return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
+                                               &attr_char_value,
+                                               &p_ms->pending_char_handles);
+}
+
+
 
 uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 {
@@ -262,11 +243,6 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
     p_ms->conn_handle       = BLE_CONN_HANDLE_INVALID;
     p_ms->pending_write_handler = p_ms_init->pending_write_handler;
     
-    //init device id sets
-    memset(p_ms->pending_ids, 0, sizeof(p_ms->pending_ids));
-    memset(p_ms->accepted_ids, 0, sizeof(p_ms->pending_ids));
-    memset(p_ms->declined_ids, 0, sizeof(p_ms->declined_ids));
-
     // Add base UUID to softdevice's internal list. 
     ble_uuid128_t base_uuid = {MS_UUID_BASE};
     err_code = sd_ble_uuid_vs_add(&base_uuid, &p_ms->uuid_type);
@@ -284,13 +260,8 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
         return err_code;
     }
     
-    err_code = pending_char_add(p_ms, p_ms_init);
-    if (err_code != NRF_SUCCESS)
-    {
-        return err_code;
-    }
-    
-    err_code  = accepted_char_add(p_ms, p_ms_init);
+   
+   err_code  = accepted_char_add(p_ms, p_ms_init);
     if (err_code != NRF_SUCCESS)
     {
         return err_code;
@@ -301,9 +272,16 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
     {
         return err_code;
     }
+
+    err_code  = pending_char_add(p_ms, p_ms_init);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
     
     return NRF_SUCCESS;
 }
+
 
 //Changes the uint8_t recieves data into a array of uint16_t ids
 uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint16_t * decoded_buffer)
@@ -322,6 +300,7 @@ uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint16_t * decoded
 
 }
 
+
 //splits each uint16_t id into two uint8_t data items so it can by sent by GATT 
 static uint8_t id_encode(uint16_t* ids, uint8_t num_ids, uint8_t * encoded_buffer)
 {  
@@ -335,10 +314,8 @@ static uint8_t id_encode(uint16_t* ids, uint8_t num_ids, uint8_t * encoded_buffe
     }
   
     
-    return len;
-   
+    return len;  
 }
-
 
 
 //updates the accepted chracteristic in GATT and notifies the client
@@ -386,6 +363,8 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
         {
             err_code = NRF_ERROR_DATA_SIZE;
         }
+
+   // conn=1;
 
     return err_code;
 }
@@ -439,6 +418,8 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
 
     return err_code;
 }
+
+
 
 
 

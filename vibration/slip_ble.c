@@ -18,10 +18,10 @@
 
 #include "slip_ble.h"
 
+
 #define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                            /**< Button used to wake up the application. */
 
-
-#define DEVICE_NAME                     "SLIP B"                           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "B SLIP B"                           /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -31,10 +31,10 @@
 #define APP_TIMER_MAX_TIMERS            2                                           /**< Maximum number of simultaneously created timers. */
 #define APP_TIMER_OP_QUEUE_SIZE         4                                           /**< Size of timer operation queues. */
 
-#define MIN_CONN_INTERVAL               500/ 1.25            /**< Minimum acceptable connection interval (0.5 seconds). */
-#define MAX_CONN_INTERVAL               1000/ 1.25          /**< Maximum acceptable connection interval (1 second). */
+#define MIN_CONN_INTERVAL               500 / 1.25            /**< Minimum acceptable connection interval (0.5 seconds). */
+#define MAX_CONN_INTERVAL               1000 / 1.25         /**< Maximum acceptable connection interval (1 second). */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
-#define CONN_SUP_TIMEOUT                4000/ 10             /**< Connection supervisory timeout (4 seconds). */
+#define CONN_SUP_TIMEOUT                4000 / 10             /**< Connection supervisory timeout (4 seconds). */
 
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(20000, APP_TIMER_PRESCALER) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (15 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)  /**< Time between each call to sd_ble_gap_conn_param_update after the first (5 seconds). */
@@ -60,12 +60,6 @@ static ble_ms_t                         m_ms;
 
 #define SCHED_MAX_EVENT_DATA_SIZE       sizeof(app_timer_event_t)                   /**< Maximum size of scheduler events. Note that scheduler BLE stack events do not contain any data, as the events are being pulled from the stack in the event handler. */
 #define SCHED_QUEUE_SIZE                10                                          /**< Maximum number of events in the scheduler queue. */
-
-
-//static uint16_t*                              pending_ids;
-//static uint16_t*                              accepted_ids;
-//static uint16_t*                              declined_ids;
-
 
 
 
@@ -121,7 +115,7 @@ static void gap_params_init(void)
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
     
-    err_code = sd_ble_gap_device_name_set(&sec_mode,(const uint8_t *) DEVICE_NAME, strlen(DEVICE_NAME));
+    err_code = sd_ble_gap_device_name_set(&sec_mode, DEVICE_NAME, strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code);
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
@@ -165,10 +159,11 @@ static void advertising_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-/**@brief Function for handling a write to the LED characteristic of the LED Button service. 
+
+/**@brief Function for handling a write to the Pending characteristic of the Meeting service. 
  * @detail A pointer to this function is passed to the service in its init structure. 
  */
-static void pending_write_handler(ble_ms_t * p_ms, uint8_t data[],uint16_t len)
+static void pending_write_handler(ble_ms_t * p_ms, uint8_t data,uint16_t len)
 {
      uint32_t      err_code;
 
@@ -178,13 +173,13 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t data[],uint16_t len)
                                           &len,
                                           data);
     APP_ERROR_CHECK(err_code);
+
     //init pending set to zero
     memset(p_ms->pending_ids, 0, sizeof(p_ms->pending_ids));
 
     //update pending list to written data
     id_decode(data,len,p_ms->pending_ids);
-  
-    //TODO add check errcode
+
 }
 
 
@@ -194,7 +189,7 @@ static void services_init(void)
 {
     uint32_t err_code;
     ble_ms_init_t init;
-
+    
     init.pending_write_handler = pending_write_handler;
     
     err_code = ble_ms_init(&m_ms, &init);
@@ -416,8 +411,6 @@ static void gpiote_init(void)
 
 
 
-
-
 /**@brief Function for initializing the button handler module.
  */
 static void buttons_init(void)
@@ -426,8 +419,7 @@ static void buttons_init(void)
     //       module.
     static app_button_cfg_t buttons[] =
     {
-        {WAKEUP_BUTTON_PIN, false, NRF_GPIO_PIN_PULLUP, NULL},
-        
+        {WAKEUP_BUTTON_PIN, false, NRF_GPIO_PIN_PULLUP, NULL}
     };
     
     APP_BUTTON_INIT(buttons, sizeof(buttons) / sizeof(buttons[0]), BUTTON_DETECTION_DELAY, true);
@@ -436,7 +428,7 @@ static void buttons_init(void)
 
 /**@brief Function for entering sleep. 
  */
-static void power_manage(void)
+void power_manage(void)
 {
     uint32_t err_code = sd_app_event_wait();
     APP_ERROR_CHECK(err_code);
@@ -463,12 +455,7 @@ void start_ble(void)
     // Start execution
     advertising_start();
     
-    // Enter main loop
-    //for (;;)
-   // {
-     //   app_sched_execute();
-     //   power_manage();
-   // }
+   
 }
 
 /** 

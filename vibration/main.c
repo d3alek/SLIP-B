@@ -70,9 +70,9 @@ void GPIOTE_IRQHandler(void)
 
 int main()
 {
+    start_ble();
     simple_uart_config(0, 23, 0, 22, 0);
     simple_uart_putstring("INIT\n");
-    start_ble();
     simple_uart_putstring("BLUETOOTH STARTED\n");
 
 //    NRF_CLOCK->LFCLKSRC = 0; // RC Timer
@@ -104,8 +104,9 @@ int main()
     
     simple_uart_putstring("DONE GPIO\n");
     simple_uart_putstring("MMA CONFIG\n");
-
+    ////////////
     MMA_configure_motion_detection();
+    /////////////////
     simple_uart_putstring("DONE MMA CONFIG\n");
 
     //MMA_init();
@@ -139,6 +140,7 @@ int main()
         }
         //nrf_gpio_pin_toggle(15);
         app_sched_execute();
+        power_manage();
 
         //MMA_getdata(acceldata);
         //x = acceldata[0] << 8 | acceldata[1];

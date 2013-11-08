@@ -24,5 +24,6 @@
 #include "ble.h"
 
 void start_ble();
+void power_manage(void);
 
 #endif // __BLE_H

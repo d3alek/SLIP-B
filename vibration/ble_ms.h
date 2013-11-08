@@ -38,11 +38,10 @@
 
 #include <stdbool.h>
 #include "slip_ble.h"
-
 #define MS_UUID_BASE {0x23, 0xD1, 0xBC, 0xEA, 0x5F, 0x78, 0x23, 0x15, 0xDE, 0xEF, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00}
 #define MS_UUID_SERVICE 0x1523
+#define MS_UUID_ACC_CHAR 0x1524
 #define MS_UUID_DECLINED_CHAR 0x1525
-#define MS_UUID_ACCEPTED_CHAR 0x1524
 #define MS_UUID_PENDING_CHAR 0x1526
 
 #define MAX_LEN 15
@@ -50,10 +49,10 @@
 // Forward declaration of the ble_ms_t type. 
 typedef struct ble_ms_s ble_ms_t;
 
-/**@brief LEDButton Service event handler type. */
+/**@brief Meeting Service event handler type. */
 typedef void (*ble_ms_pending_write_handler_t) (ble_ms_t * p_ms, uint8_t data[], uint16_t length);
 
-/**@brief LEDButton Service init structure. This contains all options and data needed for
+/**@brief Meeting Service init structure. This contains all options and data needed for
  *        initialization of the service.*/
 typedef struct
 {
@@ -61,24 +60,24 @@ typedef struct
 } ble_ms_init_t;
 
 
-/**@brief LEDButton Service structure. This contains various status information for the service. */
+/**@brief Meeting Service structure. This contains various status information for the service. */
 typedef struct ble_ms_s
 {         
-    uint16_t                     service_handle;                 
+    uint16_t                     service_handle;                   
+    ble_gatts_char_handles_t     accepted_char_handles;
+    ble_gatts_char_handles_t     declined_char_handles;     
     ble_gatts_char_handles_t     pending_char_handles;          
-    ble_gatts_char_handles_t     accepted_char_handles;     
-    ble_gatts_char_handles_t     declined_char_handles;               
     uint8_t                      uuid_type;
     uint16_t                     conn_handle;  
     uint16_t                     pending_ids[MAX_LEN]; 
     uint16_t                     accepted_ids[MAX_LEN]; 
     uint16_t                     declined_ids[MAX_LEN]; 
     bool                         is_notifying;
-    ble_ms_pending_write_handler_t   pending_write_handler;
+    ble_ms_pending_write_handler_t  pending_write_handler;
 } ble_ms_t;
 
 
-/**@brief Initialize the LEDButton Service.
+/**@brief Initialize the Meeting Service.
  *
  * @param[out]  p_ms       
  * @param[in]   p_ms_init  
@@ -87,36 +86,20 @@ typedef struct ble_ms_s
  */
 uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init);
 
-/**@brief LEDButton Service BLE stack event handler.
+/**@brief Meeting Service BLE stack event handler.
  *
- * @details Handles all events from the BLE stack of interest to the LEDButton Service.
+ * @details Handles all events from the BLE stack of interest to the Meeting Service.
  *
- * @param[in]   p_ms      LEDButton Service structure.
+ * @param[in]   p_ms       Meeting Service structure.
  * @param[in]   p_ble_evt  Event received from the BLE stack.
  */
 void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt);
 
-
-
-/**@brief decodes written characteristic value.
- *
- * @param[in]   encoded_ids     Array of uint8_t data that needs to be changed into uint16_t  
- * @param[in]   encode_len      length of encoded_ids
- * @param[out]  decoded_buffer   Array of unint16_t id's that have been decoded
- *
- * @return      NRF_SUCCESS on successful, otherwise an error code.
- */
+//TODO add brief
 uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint16_t * decoded_buffer);
-
-/**@brief updates accepted/declined characteristic.
- *
- * @param[in]   p_ms            meeting service srtucture  
- * @param[in]   len             number of ids to assign as the value
- * @param[in]  ids              Array of unint16_t id's, the new value 
- *
- * @return      NRF_SUCCESS on successful, otherwise an error code.
- */
+//TODO add brief
 uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len);
+//TODO add brief
 uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len);
 
 #endif // BLE_MS_H__
