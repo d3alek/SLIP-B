@@ -20,6 +20,9 @@ void MMA_init(void) {
         twi_master_transfer(MMA_ADDRESS, mma_init_cmd2, 2, TWI_ISSUE_STOP);
 		twi_master_transfer(MMA_ADDRESS, mma_reg_who_am_i, 1, TWI_DONT_ISSUE_STOP);
 		twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, data2, 1, TWI_ISSUE_STOP);
+        char* buf[30];
+        sprintf(buf, "whoAmI: %d\n", data2[0]);
+        simple_uart_putstring(buf);
 }
 
 void MMA_getdata(uint8_t* data) {
@@ -46,57 +49,61 @@ static uint8_t mma_motion_set_config[] = {0x15, 0xd8};
 static uint8_t mma_motion_set_thresh[] = {0x17, 0x30};
 static uint8_t mma_motion_set_debounce[] = {0x18, 0x0A};
 static uint8_t mma_motion_enable_interrupt[] = {0x2D, 0x04};
-static uint8_t mma_motion_route_interrupt[] = {0x2E, 0x04};
+static uint8_t mma_motion_route_interrupt[] = {0x2E, 0x00};
 //static uint8_t mma_active = {
 
 void MMA_put_active() {
-    uint8_t ctrl_reg_data[2];
+    uint8_t ctrl_reg_data[2] = {0, 0};
+    char* buf[20];
     //TODO not tested 
-    simple_uart_putstring("MMA_put_active\n");
     twi_master_transfer(MMA_ADDRESS, 0x2a, 1, TWI_DONT_ISSUE_STOP);
-    simple_uart_putstring("MMA 1\n");
+    nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, ctrl_reg_data, 1, TWI_ISSUE_STOP);
-    simple_uart_putstring("MMA 2\n");
+    nrf_delay_ms(1000);
+    sprintf(buf, "MMA_put_active ctr_reg initial: %d\n", ctrl_reg_data[0]);
+    simple_uart_putstring(buf);
     ctrl_reg_data[0] |= 0x01;
-    simple_uart_putstring("MMA 3\n");
     uint8_t send[] = {0x2a, ctrl_reg_data[0]};
-    simple_uart_putstring("MMA 4\n");
+    sprintf(buf, "MMA_put_active to send: %d %d\n", send[0], send[1]);
+    simple_uart_putstring(buf);
+    nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS, send, 2, TWI_ISSUE_STOP);
 }
 
-static uint8_t mma_interrupt_pin = 0x0B;
+static uint8_t mma_interrupt_pin = 0x0C;
 
 void getMotionInterrupt(uint8_t* data) {
-    simple_uart_putstring("getMotionInterrupt\n");
+    char* buf[20];
     twi_master_transfer(MMA_ADDRESS, mma_interrupt_pin, 1, TWI_DONT_ISSUE_STOP);
-    simple_uart_putstring("getMotionInterrupt read\n");
-    twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, &data, 1, TWI_ISSUE_STOP);
+    sprintf(buf, "getMotionInterrupt before: %d\n", data[0]);
+    simple_uart_putstring(buf);
+    twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, data, 1, TWI_ISSUE_STOP);
+    sprintf(buf, "getMotionInterrupt after: %d\n", data[0]);
+    simple_uart_putstring(buf);
 }
 
-    
-
 void MMA_configure_motion_detection() {
-    simple_uart_putstring("START\n");
     twi_master_transfer(MMA_ADDRESS, mma_standby, 2, TWI_ISSUE_STOP);
-    simple_uart_putstring("1\n");
+    //nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS, mma_motion_set_config, 2, TWI_ISSUE_STOP);
-    simple_uart_putstring("2\n");
+    //nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS, mma_motion_set_thresh, 2, TWI_ISSUE_STOP);
-    simple_uart_putstring("3\n");
+    //nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS, mma_motion_set_debounce, 2, TWI_ISSUE_STOP);
-    simple_uart_putstring("4\n");
+    //nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS, mma_motion_enable_interrupt, 2, TWI_ISSUE_STOP);
-    simple_uart_putstring("5\n");
+    //nrf_delay_ms(1000);
     twi_master_transfer(MMA_ADDRESS, mma_motion_route_interrupt, 2, TWI_ISSUE_STOP);
-    simple_uart_putstring("6\n");
+    //nrf_delay_ms(1000);
     MMA_put_active();
-    simple_uart_putstring("7\n");
+    uint8_t tosend = {mma_interrupt_pin, 1};
+    //twi_master_transfer(MMA_ADDRESS, tosend, 2, TWI_ISSUE_STOP);
 }
 
 #define TMP_ADDRESS (0x49 << 1)
 
 void TMP_getdata(uint8_t* data) {
-		twi_master_transfer(TMP_ADDRESS | TWI_READ_BIT, data, 2, TWI_ISSUE_STOP);
+	twi_master_transfer(TMP_ADDRESS | TWI_READ_BIT, data, 2, TWI_ISSUE_STOP);
 }
 
 uint8_t ADS_conf[] = { 0x0c };

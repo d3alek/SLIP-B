@@ -10,8 +10,6 @@
 #include "simple_uart.h"
 #include "slip_ble.h"
 
-#define GSCALE 2
-#define DRV1 15
 
 // Debug helper variables
 static volatile bool init_ok, enable_ok, push_ok, pop_ok, tx_success;
@@ -41,97 +39,44 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     NVIC_SystemReset();
 }
 
-uint8_t acceldata[6];
-
  
 
 int main()
 {
     simple_uart_config(0, 23, 0, 22, 0);
     simple_uart_putstring("INIT\n");
-    simple_uart_putstring("TWI MASTER INIT\n");
-    twi_master_init();
-    simple_uart_putstring("DONE TWI MASTER INIT\n");
-    simple_uart_putstring("MMA CONFIG\n");
-    ////////////
-    MMA_configure_motion_detection();
-    /////////////////
-    simple_uart_putstring("DONE MMA CONFIG\n");
-
-
+    
     start_ble();
     simple_uart_putstring("BLUETOOTH STARTED\n");
 
-//    NRF_CLOCK->LFCLKSRC = 0; // RC Timer
+    simple_uart_putstring("TWI MASTER INIT\n");
+    twi_master_init();
+    simple_uart_putstring("DONE TWI MASTER INIT\n");
 
-//    NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-//    NRF_CLOCK->TASKS_LFCLKSTART = 1;
-    /* Wait for the external oscillator to start up */
-    /*
-    simple_uart_putstring("WAITING FOR EXTERNAL OSCILLATOR\n");
-    while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) 
-    {
-    }
-
-    simple_uart_putstring("EXTERNAL OSCILLATOR STARTED\n");
-    */
-    
+    simple_uart_putstring("INIT VIBRATION\n");
+    init_vibration(); 
+    simple_uart_putstring("INIT VIBRATION DONE\n");
     
     NVIC_EnableIRQ(GPIOTE_IRQn);
     __enable_irq();
 
     simple_uart_putstring("IRQ ENABLED\n");
-    
- //   simple_uart_putstring("GPIO INIT\n");
-    
-//    gpio_init();
-    
-  //  simple_uart_putstring("DONE GPIO\n");
-
-
-    //MMA_init();
-
-    //simple_uart_putstring("MMA INITIALIZED\n");
-    
-    nrf_gpio_cfg_output(DRV1);
-    //nrf_gpio_cfg_input(15, NRF_GPIO_PIN_PULLDOWN);
- //   uint16_t x, y, z;
-    unsigned char buf[32];
-
-//    uint8_t testdata[4];
-    
-/*
-    MMA_get_motion_freefall_test(testdata);
-
-    sprintf((char*)buf, "%d\n%d\n%d\n%d\n", testdata[0], testdata[1], testdata[2], testdata[3]); 
-    simple_uart_putstring(buf);
-*/
-
+   
     uint8_t uart_data;
-    uint8_t interruptData;
+    char* buf[30];
     while (1) {
-        //getMotionInterrupt(&interruptData); 
-        //sprintf((char*)buf, "interrupt is %d\n", interruptData);
-        //simple_uart_putstring(buf);
         if (simple_uart_get_with_timeout(1, &uart_data)) {
             sprintf((char*)buf, "got %s", uart_data);
             simple_uart_putstring(buf);
             switch (uart_data) {
                 case 'v':
-                    nrf_gpio_pin_toggle(DRV1);
+                    vibration_toggle();
                     break;
             }
         }
         app_sched_execute();
-        power_manage(); // hangs, while loop stops here
-
-        //MMA_getdata(acceldata);
-        //x = acceldata[0] << 8 | acceldata[1];
-        //y = acceldata[2] << 8 | acceldata[3];
-        //z = acceldata[4] << 8 | acceldata[5];
-
-        //sprintf((char*)buf, "X: %d Y: %d Z: %d\n", x, y, z);
-        //simple_uart_putstring(buf);
+        vibration_update(); 
+        //power_manage(); // hangs, while loop stops here
         nrf_delay_ms(500);
     }
 }

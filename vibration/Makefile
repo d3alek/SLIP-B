@@ -2,6 +2,9 @@ BOARD := BOARD_RESPECK
 
 C_SOURCE_FILES += main.c
 C_SOURCE_FILES += libjanek.c
+
+C_SOURCE_FILES += libalek.c
+
 C_SOURCE_FILES += slip_ble.c
 C_SOURCE_FILES += twi_sw_master.c
 
