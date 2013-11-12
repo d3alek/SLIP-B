@@ -3,7 +3,7 @@ BOARD := BOARD_RESPECK
 C_SOURCE_FILES += main.c
 C_SOURCE_FILES += libjanek.c
 C_SOURCE_FILES += slip_ble.c
-C_SOURCE_FILES += twi_hw_master.c
+C_SOURCE_FILES += twi_sw_master.c
 
 C_SOURCE_FILES += nrf_delay.c
 C_SOURCE_FILES += simple_uart.c

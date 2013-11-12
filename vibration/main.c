@@ -35,7 +35,7 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     //                The flash write will happen EVEN if the radio is active, thus interrupting
     //                any communication.
     //                Use with care. Un-comment the line below to use.
-    // ble_debug_assert_handler(error_code, line_num, p_file_name);
+    //ble_debug_assert_handler(error_code, line_num, p_file_name);
 
     // On assert, the system can only recover with a reset.
     NVIC_SystemReset();
@@ -43,36 +43,23 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
 
 uint8_t acceldata[6];
 
-static void gpio_init(void)
-{
-//  NRF_GPIO->PIN_CNF[MY_BUTTON] = (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
-//                                        | (GPIO_PIN_CNF_DRIVE_S0S1 << GPIO_PIN_CNF_DRIVE_Pos)
-//                                        | (NRF_GPIO_PIN_NOPULL << GPIO_PIN_CNF_PULL_Pos)
-//                                        | (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos)
-//                                        | (GPIO_PIN_CNF_DIR_Input << GPIO_PIN_CNF_DIR_Pos);    
-//
-  NVIC_EnableIRQ(GPIOTE_IRQn);
-  NRF_GPIOTE->INTENSET = GPIOTE_INTENSET_PORT_Set << GPIOTE_INTENSET_PORT_Pos;
-}
-  
-/** GPIOTE interrupt handler.
-*/
-void GPIOTE_IRQHandler(void)
-{
-    simple_uart_putstring("INTERRUPT!");
-    // Event causing the interrupt must be cleared
-    if ((NRF_GPIOTE->EVENTS_PORT != 0))
-    {
-          NRF_GPIOTE->EVENTS_PORT = 0;
-    }
-}
  
 
 int main()
 {
-    start_ble();
     simple_uart_config(0, 23, 0, 22, 0);
     simple_uart_putstring("INIT\n");
+    simple_uart_putstring("TWI MASTER INIT\n");
+    twi_master_init();
+    simple_uart_putstring("DONE TWI MASTER INIT\n");
+    simple_uart_putstring("MMA CONFIG\n");
+    ////////////
+    MMA_configure_motion_detection();
+    /////////////////
+    simple_uart_putstring("DONE MMA CONFIG\n");
+
+
+    start_ble();
     simple_uart_putstring("BLUETOOTH STARTED\n");
 
 //    NRF_CLOCK->LFCLKSRC = 0; // RC Timer
@@ -88,26 +75,19 @@ int main()
 
     simple_uart_putstring("EXTERNAL OSCILLATOR STARTED\n");
     */
-    /*simple_uart_putstring("TWI MASTER INIT\n");
-    twi_master_init();
-    simple_uart_putstring("AFTER TWI MASTER INIT\n");
-
-    */
+    
+    
     NVIC_EnableIRQ(GPIOTE_IRQn);
     __enable_irq();
 
     simple_uart_putstring("IRQ ENABLED\n");
     
-    simple_uart_putstring("GPIO INIT\n");
+ //   simple_uart_putstring("GPIO INIT\n");
     
-    gpio_init();
+//    gpio_init();
     
-    simple_uart_putstring("DONE GPIO\n");
-    simple_uart_putstring("MMA CONFIG\n");
-    ////////////
-    MMA_configure_motion_detection();
-    /////////////////
-    simple_uart_putstring("DONE MMA CONFIG\n");
+  //  simple_uart_putstring("DONE GPIO\n");
+
 
     //MMA_init();
 
@@ -128,7 +108,11 @@ int main()
 */
 
     uint8_t uart_data;
+    uint8_t interruptData;
     while (1) {
+        //getMotionInterrupt(&interruptData); 
+        //sprintf((char*)buf, "interrupt is %d\n", interruptData);
+        //simple_uart_putstring(buf);
         if (simple_uart_get_with_timeout(1, &uart_data)) {
             sprintf((char*)buf, "got %s", uart_data);
             simple_uart_putstring(buf);
@@ -138,9 +122,8 @@ int main()
                     break;
             }
         }
-        //nrf_gpio_pin_toggle(15);
         app_sched_execute();
-        power_manage();
+        power_manage(); // hangs, while loop stops here
 
         //MMA_getdata(acceldata);
         //x = acceldata[0] << 8 | acceldata[1];

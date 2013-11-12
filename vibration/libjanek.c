@@ -41,34 +41,56 @@ void MMA_get_motion_freefall_test(uint8_t* data) {
     twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, data+3, 1, TWI_ISSUE_STOP);
 }
 
-static uint8_t mma_standby = {0x2a, 0x18};
-static uint8_t mma_motion_set_config = {0x15, 0xd8};
-static uint8_t mma_motion_set_thresh = {0x17, 0x30};
-static uint8_t mma_motion_set_debounce = {0x18, 0x0A};
-static uint8_t mma_motion_enable_interrupt = {0x2D, 0x04};
-static uint8_t mma_motion_route_interrupt = {0x2E, 0x04};
+static uint8_t mma_standby[] = {0x2a, 0x18};
+static uint8_t mma_motion_set_config[] = {0x15, 0xd8};
+static uint8_t mma_motion_set_thresh[] = {0x17, 0x30};
+static uint8_t mma_motion_set_debounce[] = {0x18, 0x0A};
+static uint8_t mma_motion_enable_interrupt[] = {0x2D, 0x04};
+static uint8_t mma_motion_route_interrupt[] = {0x2E, 0x04};
 //static uint8_t mma_active = {
 
 void MMA_put_active() {
-    uint8_t ctrl_reg_data;
+    uint8_t ctrl_reg_data[2];
     //TODO not tested 
+    simple_uart_putstring("MMA_put_active\n");
     twi_master_transfer(MMA_ADDRESS, 0x2a, 1, TWI_DONT_ISSUE_STOP);
+    simple_uart_putstring("MMA 1\n");
     twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, ctrl_reg_data, 1, TWI_ISSUE_STOP);
-    ctrl_reg_data |= 0x01;
-    uint8_t send = {0x2a, ctrl_reg_data};
+    simple_uart_putstring("MMA 2\n");
+    ctrl_reg_data[0] |= 0x01;
+    simple_uart_putstring("MMA 3\n");
+    uint8_t send[] = {0x2a, ctrl_reg_data[0]};
+    simple_uart_putstring("MMA 4\n");
     twi_master_transfer(MMA_ADDRESS, send, 2, TWI_ISSUE_STOP);
 }
+
+static uint8_t mma_interrupt_pin = 0x0B;
+
+void getMotionInterrupt(uint8_t* data) {
+    simple_uart_putstring("getMotionInterrupt\n");
+    twi_master_transfer(MMA_ADDRESS, mma_interrupt_pin, 1, TWI_DONT_ISSUE_STOP);
+    simple_uart_putstring("getMotionInterrupt read\n");
+    twi_master_transfer(MMA_ADDRESS | TWI_READ_BIT, &data, 1, TWI_ISSUE_STOP);
+}
+
     
 
-
 void MMA_configure_motion_detection() {
+    simple_uart_putstring("START\n");
     twi_master_transfer(MMA_ADDRESS, mma_standby, 2, TWI_ISSUE_STOP);
+    simple_uart_putstring("1\n");
     twi_master_transfer(MMA_ADDRESS, mma_motion_set_config, 2, TWI_ISSUE_STOP);
+    simple_uart_putstring("2\n");
     twi_master_transfer(MMA_ADDRESS, mma_motion_set_thresh, 2, TWI_ISSUE_STOP);
+    simple_uart_putstring("3\n");
     twi_master_transfer(MMA_ADDRESS, mma_motion_set_debounce, 2, TWI_ISSUE_STOP);
+    simple_uart_putstring("4\n");
     twi_master_transfer(MMA_ADDRESS, mma_motion_enable_interrupt, 2, TWI_ISSUE_STOP);
-    twi_master_transfer(MMA_ADDRESS, mma_motion_enable_interrupt, 2, TWI_ISSUE_STOP);
+    simple_uart_putstring("5\n");
+    twi_master_transfer(MMA_ADDRESS, mma_motion_route_interrupt, 2, TWI_ISSUE_STOP);
+    simple_uart_putstring("6\n");
     MMA_put_active();
+    simple_uart_putstring("7\n");
 }
 
 #define TMP_ADDRESS (0x49 << 1)
