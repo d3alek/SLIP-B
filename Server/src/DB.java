@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,25 +47,20 @@ public class DB {
 		if (_instance == null) {
 			_instance = new DB();
 		}
+		String idSubString = id.substring(0, id.indexOf(' '));
 		
-		// remove strings
-		// this has to be significantly more comprehensive
-		// TODO fix, this doesn't remove remove spaces at the end
-		id.replaceAll("\\s+", "");
-		
-		// TODO remove, this is a hack. Scary stuff...
-		if (id.equals("kettle1 "))
-			return true;
-		
-		System.out.println("Comparing identifier:" + id);
-		
+		// loop until kettle id is found.
 		for (int i = 0; i < _kettleIds.size();i++) {
 			String kettleId = _kettleIds.get(i);
-			if (id.equals(kettleId))
+			String kettleId2 = kettleId + " ";
+			if (id.equals(kettleId) 
+					|| id.equals(kettleId2)
+					|| idSubString.equals(kettleId) 
+					|| idSubString.equals(kettleId2))
+			{
 				return true;
+			}
 		}
-		
-		
 		
 		return false;
 	}
@@ -100,10 +96,11 @@ public class DB {
 			_instance = new DB();
 		}
 		
+		List<String> contactsF = FilterString(contacts);
 		List<String> numbers = new ArrayList<String>();
 		
-		for(int i = 0; i < contacts.size(); i++) {
-			String contact = contacts.get(i);
+		for(int i = 0; i < contactsF.size(); i++) {
+			String contact = contactsF.get(i);
 			String number = _contactToNumber.get(contact);
 			
 			numbers.add(number);
@@ -125,7 +122,7 @@ public class DB {
 			_instance = new DB();
 		}
 		
-		return GetNumbersByContacts(GetNamesByCupIds(cupIds));
+		return GetNumbersByContacts(GetNamesByCupIds(FilterString(cupIds)));
 	}
 	
 	/**
@@ -141,10 +138,11 @@ public class DB {
 			_instance = new DB();
 		}
 		
+		List<String> cupIdsF = FilterString(cupIds);
 		List<String> names = new ArrayList<String>();
 		
-		for(int i = 0; i < cupIds.size(); i++) {
-			String cupId = cupIds.get(i);
+		for(int i = 0; i < cupIdsF.size(); i++) {
+			String cupId = cupIdsF.get(i);
 			String name = _cupIdToContact.get(cupId);
 			
 			names.add(name);
@@ -160,6 +158,16 @@ public class DB {
  ====================================================
  */
 	
+	private static List<String> FilterString(List<String> strings)
+	{
+		for (int i = 0; i < strings.size(); i++ ) {
+			String s = strings.get(i);
+			s.replaceAll("[^a-zA-Z0-9]","");
+			strings.set(i, s);
+		}
+		return strings;
+	}
+	
 	private static void CreateKettleIds() 
 	{
 		_kettleIds.add("kettle1");
@@ -171,16 +179,16 @@ public class DB {
 	
 	private static void CreateContactList() 
 	{
-		_cupIdToContact.put("M255", "Alek");
-		_cupIdToContact.put("M015", "Catalina");
-		_cupIdToContact.put("M018", "Ewan");
-		_cupIdToContact.put("M043", "Georgi");
-		_cupIdToContact.put("M077", "Markus");
+		_cupIdToContact.put("m255", "alek");
+		_cupIdToContact.put("m015", "catalina");
+		_cupIdToContact.put("m018", "ewan");
+		_cupIdToContact.put("m043", "georgi");
+		_cupIdToContact.put("m077", "markus");
 		
-		_contactToNumber.put("Alek", "07777777777");
-		_contactToNumber.put("Catalina", "07777777777");
-		_contactToNumber.put("Ewan", "07777777777");
-		_contactToNumber.put("Georgi", "07777777777");
-		_contactToNumber.put("Markus", "07777777777");
+		_contactToNumber.put("alek", "07777777777");
+		_contactToNumber.put("catalina", "07777777777");
+		_contactToNumber.put("ewan", "07777777777");
+		_contactToNumber.put("georgi", "07777777777");
+		_contactToNumber.put("markus", "07777777777");
 	}
 }
