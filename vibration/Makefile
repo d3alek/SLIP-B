@@ -5,6 +5,8 @@ C_SOURCE_FILES += libjanek.c
 
 C_SOURCE_FILES += libalek.c
 
+C_SOURCE_FILES += radio_config.c
+
 C_SOURCE_FILES += slip_ble.c
 C_SOURCE_FILES += twi_sw_master.c
 

@@ -10,43 +10,29 @@
 #include "math.h"
 #include "simple_uart.h"
 #include "slip_ble.h"
+#include "radio_config.h"
+
+static uint8_t packet[PACKET_PAYLOAD_MAXSIZE];  // Packet to transmit.
 
 
-// Debug helper variables
-static volatile bool init_ok, enable_ok, push_ok, pop_ok, tx_success;
-
-/**@brief Error handler function, which is called when an error has occurred. 
- *
- * @warning This handler is an example only and does not fit a final product. You need to analyze 
- *          how your product is supposed to react in case of error.
- *
- * @param[in] error_code  Error code supplied to the handler.
- * @param[in] line_num    Line number where the handler is called.
- * @param[in] p_file_name Pointer to the file name. 
- */
 void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
 {
-
-    // This call can be used for debug purposes during development of an application.
-    // @note CAUTION: Activating this code will write the stack to flash on an error.
-    //                This function should NOT be used in a final product.
-    //                It is intended STRICTLY for development/debugging purposes.
-    //                The flash write will happen EVEN if the radio is active, thus interrupting
-    //                any communication.
-    //                Use with care. Un-comment the line below to use.
-    //ble_debug_assert_handler(error_code, line_num, p_file_name);
-
-    // On assert, the system can only recover with a reset.
     NVIC_SystemReset();
 }
 
- 
 
 int main()
 {
+    // // Start 16 MHz crystal oscillator.
+    // NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
+    // NRF_CLOCK->TASKS_HFCLKSTART    = 1;
+
+    // // Wait for the external oscillator to start up.
+    // while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}
+
     simple_uart_config(0, 23, 0, 22, 0);
     simple_uart_putstring("INIT\n");
-    
+
     start_ble();
     simple_uart_putstring("BLUETOOTH STARTED\n");
 
@@ -55,28 +41,79 @@ int main()
     simple_uart_putstring("DONE TWI MASTER INIT\n");
 
     simple_uart_putstring("INIT VIBRATION\n");
-    init_vibration(); 
+    init_vibration();
     simple_uart_putstring("INIT VIBRATION DONE\n");
-    
-    NVIC_EnableIRQ(GPIOTE_IRQn);
-    __enable_irq();
 
-    simple_uart_putstring("IRQ ENABLED\n");
-   
+    // Enable LED
+    nrf_gpio_cfg_output(0);
+
+    void send_packet(void)
+    {
+      // Set payload pointer.
+      NRF_RADIO->PACKETPTR = (uint32_t)packet;
+      uint8_t i;
+      for (i=0; i<4; i++)
+      {
+        NRF_RADIO->EVENTS_READY = 0U;
+        NRF_RADIO->TASKS_TXEN   = 1; // Enable radio and wait for ready.
+
+        while (NRF_RADIO->EVENTS_READY == 0U) {}
+
+        // Start transmission.
+        NRF_RADIO->TASKS_START = 1U;
+        NRF_RADIO->EVENTS_END  = 0U;
+
+        while(NRF_RADIO->EVENTS_END == 0U) {} // Wait for end of the transmission packet.
+
+        NRF_RADIO->EVENTS_DISABLED = 0U;
+        NRF_RADIO->TASKS_DISABLE   = 1U; // Disable the radio.
+
+        while(NRF_RADIO->EVENTS_DISABLED == 0U) {}
+      }
+    }
+
+    // uint64_t this_device_id = ((uint64_t) NRF_FICR->DEVICEID[1] << 32) | ((uint64_t) NRF_FICR->DEVICEID[0]);
+    uint64_t device_id = 0x5b83092c6767bb6d;
+    // uint64_t device_id = 0xc5861596e2118c8d;
+    uint8_t id_c;
+    bool seq_start = true;
+
     uint8_t uart_data;
     char* buf[30];
     while (1) {
-    if(is_connected()){
-      if (simple_uart_get_with_timeout(1, &uart_data)) {
-            sprintf((char*)buf, "got %s", uart_data);
-            simple_uart_putstring(buf);
-            switch (uart_data) {
-              case 'v':
-               vibration_toggle();
-               break;
-            }
+    if ( is_connected() ) {
+        nrf_gpio_pin_toggle(0);
+        nrf_delay_ms(200);
+
+        simple_uart_putstring("RADIO INIT\n");
+        radio_configure();
+        simple_uart_putstring("DONE RADIO INIT\n");
+
+        if (seq_start) {
+          seq_start = !seq_start;
+          // Packet to send over radio
+          packet[0] = (uint8_t) 0xcf;
+
+          nrf_gpio_pin_set(0);
+          nrf_delay_ms(1000);
         }
-        vibration_update(); 
+        else {
+          // Packet to send over radio
+          packet[0] = (uint8_t) (device_id >> (id_c*8)) & 0xff;
+
+          nrf_gpio_pin_toggle(0);
+          nrf_delay_ms(200);
+
+          if (id_c < 7) {
+            id_c++;
+          }
+          else {
+            id_c = 0;
+            seq_start = !seq_start;
+          }
+        }
+
+        // send_packet();
     }
         app_sched_execute();
         //power_manage(); // hangs, while loop stops here
