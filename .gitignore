@@ -1,0 +1,7 @@
+opt
+nrf51_sdk
+*.DS_Store
+_build
+*.log
+
+
