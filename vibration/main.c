@@ -6,6 +6,7 @@
 #include "twi_master.h"
 #include "app_timer.h"
 #include "libjanek.h"
+#include "libalek.h"
 #include "math.h"
 #include "simple_uart.h"
 #include "slip_ble.h"
@@ -65,17 +66,19 @@ int main()
     uint8_t uart_data;
     char* buf[30];
     while (1) {
-        if (simple_uart_get_with_timeout(1, &uart_data)) {
+    if(is_connected()){
+      if (simple_uart_get_with_timeout(1, &uart_data)) {
             sprintf((char*)buf, "got %s", uart_data);
             simple_uart_putstring(buf);
             switch (uart_data) {
-                case 'v':
-                    vibration_toggle();
-                    break;
+              case 'v':
+               vibration_toggle();
+               break;
             }
         }
-        app_sched_execute();
         vibration_update(); 
+    }
+        app_sched_execute();
         //power_manage(); // hangs, while loop stops here
         nrf_delay_ms(500);
     }

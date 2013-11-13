@@ -122,9 +122,9 @@ static uint32_t accepted_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_in
 
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = sizeof(uint16_t);
+    attr_char_value.init_len     = sizeof(uint64_t);
     attr_char_value.init_offs    = 0;
-    attr_char_value.max_len      = sizeof(uint16_t) * MAX_LEN;
+    attr_char_value.max_len      = sizeof(uint64_t) * MAX_LEN;
     attr_char_value.p_value      = NULL;
     
     return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
@@ -176,9 +176,9 @@ static uint32_t declined_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_in
 
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = sizeof(uint16_t);
+    attr_char_value.init_len     = sizeof(uint64_t);
     attr_char_value.init_offs    = 0;
-    attr_char_value.max_len      = sizeof(uint16_t) * MAX_LEN;
+    attr_char_value.max_len      = sizeof(uint64_t) * MAX_LEN;
     attr_char_value.p_value      = NULL;
     
     return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
@@ -222,9 +222,9 @@ static uint32_t pending_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_ini
 
     attr_char_value.p_uuid       = &ble_uuid;
     attr_char_value.p_attr_md    = &attr_md;
-    attr_char_value.init_len     = sizeof(uint16_t);
+    attr_char_value.init_len     = sizeof(uint64_t);
     attr_char_value.init_offs    = 0;
-    attr_char_value.max_len      = sizeof(uint16_t) * MAX_LEN;
+    attr_char_value.max_len      = sizeof(uint64_t) * MAX_LEN;
     attr_char_value.p_value      = NULL;
     
     return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
@@ -283,17 +283,20 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 }
 
 
-//Changes the uint8_t recieves data into a array of uint16_t ids
-uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint16_t * decoded_buffer)
+//Changes the uint8_t recieves data into a array of uint64_t ids
+uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint64_t * decoded_buffer)
 {  
-    uint8_t num_ids = 0;
+    uint8_t num_ids = 0; 
     int i;
-    
-
+    int u = 0;;    
     for(i=0;i< encoded_len; i++){
-        decoded_buffer[num_ids]  = (encoded_ids[i] << 16);
-        i++;
-        decoded_buffer[num_ids++]  &= encoded_ids[i];
+        decoded_buffer[num_ids]  = (encoded_ids[i] << (u*8));
+        if(u == 7){
+           u = 0;
+           num_ids++;
+        }
+        else
+          u++;
     }
     
     return num_ids;
@@ -301,19 +304,20 @@ uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint16_t * decoded
 }
 
 
-//splits each uint16_t id into two uint8_t data items so it can by sent by GATT 
-static uint8_t id_encode(uint16_t* ids, uint8_t num_ids, uint8_t * encoded_buffer)
+//splits each uint64_t id into 8 uint8_t data items so it can by sent by GATT 
+static uint8_t id_encode(uint64_t* ids, uint8_t num_ids, uint8_t * encoded_buffer)
 {  
     uint8_t len = 0;
     int i;
-    
+    int u;
     // Encode id measurement
     for(i=0;i< num_ids; i++){
-         encoded_buffer[len++]  = (ids[i] & 0xFFFF0000) >> 16;
-         encoded_buffer[len++]  = ids[i] & 0x0000FFFF;
+         for(u=1;u<=8;u++){
+            encoded_buffer[len++]  = (ids[i] & (0xFF << (64 - u*8))) >> (64 - u*8);
+         }
+
     }
   
-    
     return len;  
 }
 
@@ -364,7 +368,6 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
             err_code = NRF_ERROR_DATA_SIZE;
         }
 
-   // conn=1;
 
     return err_code;
 }

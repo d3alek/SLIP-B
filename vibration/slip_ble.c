@@ -21,7 +21,7 @@
 
 #define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                            /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "B SLIP B"                           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "SLIP B"                           /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -58,6 +58,8 @@ static ble_gap_sec_params_t             m_sec_params;                           
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 static ble_ms_t                         m_ms;
 
+
+int conn;
 #define SCHED_MAX_EVENT_DATA_SIZE       sizeof(app_timer_event_t)                   /**< Maximum size of scheduler events. Note that scheduler BLE stack events do not contain any data, as the events are being pulled from the stack in the event handler. */
 #define SCHED_QUEUE_SIZE                10                                          /**< Maximum number of events in the scheduler queue. */
 
@@ -163,6 +165,7 @@ static void advertising_init(void)
 /**@brief Function for handling a write to the Pending characteristic of the Meeting service. 
  * @detail A pointer to this function is passed to the service in its init structure. 
  */
+
 static void pending_write_handler(ble_ms_t * p_ms, uint8_t data,uint16_t len)
 {
      uint32_t      err_code;
@@ -304,7 +307,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             nrf_gpio_pin_set(CONNECTED_LED_PIN_NO);
             nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-
+            conn = 1;
             err_code = app_button_enable();
            
             break;
@@ -435,11 +438,18 @@ void power_manage(void)
 }
 
 
+int is_connected(){
+  return conn;
+}
+
+
+
 /**@brief Function for application main entry.
  */
 void start_ble(void)
 {
     // Initialize
+    conn = 0;
     leds_init();
     timers_init();
     gpiote_init();

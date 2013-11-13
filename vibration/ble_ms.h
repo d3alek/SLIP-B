@@ -69,9 +69,9 @@ typedef struct ble_ms_s
     ble_gatts_char_handles_t     pending_char_handles;          
     uint8_t                      uuid_type;
     uint16_t                     conn_handle;  
-    uint16_t                     pending_ids[MAX_LEN]; 
-    uint16_t                     accepted_ids[MAX_LEN]; 
-    uint16_t                     declined_ids[MAX_LEN]; 
+    uint64_t                     pending_ids[MAX_LEN]; 
+    uint64_t                     accepted_ids[MAX_LEN]; 
+    uint64_t                     declined_ids[MAX_LEN]; 
     bool                         is_notifying;
     ble_ms_pending_write_handler_t  pending_write_handler;
 } ble_ms_t;
@@ -96,7 +96,7 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init);
 void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt);
 
 //TODO add brief
-uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint16_t * decoded_buffer);
+uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint64_t * decoded_buffer);
 //TODO add brief
 uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len);
 //TODO add brief

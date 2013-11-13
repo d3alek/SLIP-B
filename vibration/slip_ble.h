@@ -25,5 +25,6 @@
 
 void start_ble();
 void power_manage(void);
+int is_connected();
 
 #endif // __BLE_H
