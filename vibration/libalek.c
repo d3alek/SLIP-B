@@ -41,6 +41,7 @@ uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
     if (hi > 0x7F) {
         //simple_uart_putstring("-");
         *minus = true;
+        data &= 0xFFFC;
         data = (~data + 1);
     }
     
@@ -114,6 +115,9 @@ uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
             }
         }
     }
+    if (*minus) {
+        result = 1 - result;
+    }
     *mantissa = result; 
     
     return int_part;
@@ -155,12 +159,16 @@ void vibration_update() {
     
     MMA_getdata(acceldata);
 
-    sprintf((char*)buf, "Vibration data: %c%d.%d %c%d.%d %c%d.%d\n", xminus?'-':' ', x, xmantissa, yminus?'-':' ', y, ymantissa, zminus?'-':' ', z, zmantissa);
+    sprintf((char*)buf, "%c%d.%d %c%d.%d %c%d.%d\n", xminus?'-':' ', x, xmantissa, yminus?'-':' ', y, ymantissa, zminus?'-':' ', z, zmantissa);
     simple_uart_putstring(buf);
+
+    int xx = xminus ? -x: x;
+    int yy = xminus ? -y: y;
+    int zz = xminus ? -z: z;
 
     if ((x != -1 && abs(prevx - x) >=1)
             || (y != -1 && abs(prevy - y) >=1)
-            || (z != -1 && abs(prevz - z) >=1)) {
+            || (z != -1 && abs(prevz - z) >=2)) {
         simple_uart_putstring("Clearing vibration\n");
         nrf_gpio_pin_clear(DRV1);
     }

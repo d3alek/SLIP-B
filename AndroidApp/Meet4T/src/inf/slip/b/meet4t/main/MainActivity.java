@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
@@ -61,7 +62,9 @@ public class MainActivity extends Activity {
 	}
 
 	private void scanDevices() {
+		Log.d("CAt", "creating intent");
 		Intent intent = new Intent(this, DeviceScanActivity.class);
+		Log.d("CAt", "about to start scanActivity");
 		startActivity(intent);
 	}
 
@@ -104,7 +107,6 @@ public class MainActivity extends Activity {
 
 	private void bleNotification(int message) {
 	    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-		
 	}
 
 	private void invitePeople() {

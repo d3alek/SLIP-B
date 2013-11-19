@@ -16,6 +16,10 @@
 
 package inf.slip.b.meet4t.bluetooth;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -31,9 +35,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-
-import java.util.List;
-import java.util.UUID;
+import android.widget.Toast;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -47,7 +49,8 @@ public class BluetoothLeService extends Service {
     private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
     private int mConnectionState = STATE_DISCONNECTED;
-
+    
+    private static List<Integer> mugQueue = new ArrayList<Integer>();
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTING = 1;
     private static final int STATE_CONNECTED = 2;
@@ -80,7 +83,6 @@ public class BluetoothLeService extends Service {
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" +
                         mBluetoothGatt.discoverServices());
-
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 intentAction = ACTION_GATT_DISCONNECTED;
                 mConnectionState = STATE_DISCONNECTED;
@@ -315,5 +317,26 @@ public class BluetoothLeService extends Service {
         if (mBluetoothGatt == null) return null;
 
         return mBluetoothGatt.getServices();
+    }
+
+    public void startInviting(List<Integer> mugs) {
+    	mugQueue.addAll(mugs);
+    	Integer mug = mugQueue.get(0);
+    	
+    }
+
+    public BluetoothGattService getServiceByUuid(String uuid) {
+    	return getServiceByUuid(UUID.fromString(uuid));
+    }
+    
+    public BluetoothGattService getServiceByUuid(UUID uuid) {
+    	return mBluetoothGatt.getService(uuid);
+    }
+    
+    public void write(BluetoothGattCharacteristic c) {
+    	Log.d("Cat", "writing the characteristic");
+    	mBluetoothGatt.writeCharacteristic(c);
+    	Log.d("Cat", "YaY!!!!");
+    	
     }
 }
