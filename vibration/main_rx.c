@@ -33,11 +33,32 @@
 
 static uint8_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet buffer. */
 
-/**
- * @brief Function for application main entry.
- */
- int main(void)
- {
+void send_packet(uint8_t rep)
+{
+  // Set payload pointer.
+  NRF_RADIO->PACKETPTR = (uint32_t)packet;
+  uint8_t i;
+  for (i=0; i<rep; i++)
+  {
+    // simple_uart_putstring("TX START\n");
+    NRF_RADIO->EVENTS_READY = 0U;
+    NRF_RADIO->TASKS_TXEN   = 1; // Enable radio and wait for ready.
+    while (NRF_RADIO->EVENTS_READY == 0U) {}
+
+    // Start transmission.
+    NRF_RADIO->TASKS_START = 1U;
+    NRF_RADIO->EVENTS_END  = 0U;
+    while(NRF_RADIO->EVENTS_END == 0U) {} // Wait for end of the transmission packet.
+
+    NRF_RADIO->EVENTS_DISABLED = 0U;
+    NRF_RADIO->TASKS_DISABLE   = 1U; // Disable the radio.
+    while(NRF_RADIO->EVENTS_DISABLED == 0U) {}
+    // simple_uart_putstring("TX END\n");
+  }
+}
+
+int main(void)
+{
   // Start 16 MHz crystal oscillator.
   NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
   NRF_CLOCK->TASKS_HFCLKSTART    = 1;
@@ -51,13 +72,14 @@ static uint8_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet bu
   // Enable UART comms
   simple_uart_config(0, 23, 0, 22, 0);
   unsigned char buf[32];
+  uint8_t uart_data;
 
   // Set radio configuration parameters.
   radio_configure();
 
   // Print Device ID
   uint64_t this_device_id = (((uint64_t) NRF_FICR->DEVICEID[1] << 32) | ((uint64_t) NRF_FICR->DEVICEID[0]));
-  sprintf((char*)buf, "ID: %llx",  this_device_id);
+  sprintf((char*)buf, "ID: %llx\n",  this_device_id);
   simple_uart_putstring(buf);
 
   // Initialise LibAlek
@@ -68,9 +90,11 @@ static uint8_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet bu
 
   while(true)
   {
-    vibration_update();
-    // Set payload pointer.
-    NRF_RADIO->PACKETPTR    = (uint32_t) packet;
+    bool send_ack = false;
+    uint8_t ack;
+
+    // vibration_update();
+    NRF_RADIO->PACKETPTR    = (uint32_t) packet; // Set payload pointer.
     NRF_RADIO->EVENTS_READY = 0U;
     NRF_RADIO->TASKS_RXEN   = 1U; // Enable radio.
 
@@ -79,42 +103,62 @@ static uint8_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet bu
     NRF_RADIO->EVENTS_END  = 0U;
     NRF_RADIO->TASKS_START = 1U; // Start listening and wait for address received event.
 
-    // Wait for the end of the packet.
-    while(NRF_RADIO->EVENTS_END == 0U) {}
+    while(NRF_RADIO->EVENTS_END == 0U) {} // Wait for the end of the packet.
 
-    // Write received data to port 1 on CRC match.
-    if (NRF_RADIO->CRCSTATUS == 1U)
-    {
+    if (NRF_RADIO->CRCSTATUS == 1U) { // Write received data to port 1 on CRC match.
+      nrf_gpio_pin_toggle(0);
+      sprintf((char*)buf, "%x ", packet[0]);
+      simple_uart_putstring(buf);
       if (packet[0] == 0xcf) // Master init sequence
       {
+        device_id = 0;
         id_c = 0;
-        // sprintf((char*)buf, "Master init sequence");
-        // simple_uart_putstring(buf);
-        nrf_gpio_pin_clear(0);
-      }
-      else
-      {
+        // simple_uart_putstring("Master init sequence\n");
+      } else {
         device_id = device_id | ( ((uint64_t) packet[0]) << (id_c * 8) );
         id_c++;
         if (id_c == 8)
         {
-          sprintf((char*)buf, "Received %llx", device_id);
-          simple_uart_putstring(buf);
           if (this_device_id == device_id)
           {
-            // vibration_set();
+            simple_uart_putstring("Got ping!\n[a]ccept or [r]eject\n");
+            nrf_gpio_pin_set(0);
+
+            uart_data = simple_uart_get();
+            switch (uart_data) {
+              case 'a':
+                ack = 0xaf;  // Accept
+                send_ack = true;
+                simple_uart_putstring("Accepted\n");
+                break;
+              case 'r':
+                ack = 0xa0;  // Reject
+                send_ack = true;
+                simple_uart_putstring("Rejected\n");
+                break;
+            }
+            uart_data = simple_uart_get();
+          } else {
+            sprintf((char*)buf, "Broken packet %llx\n", device_id);
+            simple_uart_putstring(buf);
+            nrf_gpio_pin_clear(0);
           }
           device_id = 0;
           id_c = 0;
         }
       }
-      nrf_gpio_pin_toggle(0);
     }
 
     NRF_RADIO->EVENTS_DISABLED = 0U;
     NRF_RADIO->TASKS_DISABLE   = 1U;  // Disable the radio.
 
     while(NRF_RADIO->EVENTS_DISABLED == 0U) {}
+
+    if (send_ack) {
+      packet[0] = ack;
+      send_packet(3);
+      send_ack = false;
+    }
   }
 
 }
