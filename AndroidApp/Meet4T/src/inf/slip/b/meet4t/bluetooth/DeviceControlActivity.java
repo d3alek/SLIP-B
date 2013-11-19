@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -53,9 +54,9 @@ import android.widget.Toast;
  */
 public class DeviceControlActivity extends Activity {
 	private final static String SERVICE_I_WANT = "00001523-1212-efde-1523-785feabcd123";
-	private final static String PENDING_CHARACTERISTIC = "00001523-1212-efde-1523-785feabcd123";
-//	private final static String AVAILABLE_CHARACTERISTIC = "00001523-1212-efde-1523-785feabcd123";
-//	private final static String DECLINED_CHARACTERISTIC = "00001523-1212-efde-1523-785feabcd123";
+	private final static String PENDING_CHARACTERISTIC = "00001526-1212-efde-1523-785feabcd123";
+//	private final static String AVAILABLE_CHARACTERISTIC = "0000152x-1212-efde-1523-785feabcd123";
+//	private final static String DECLINED_CHARACTERISTIC = "0000152x-1212-efde-1523-785feabcd123";
 	private final static String TAG = DeviceControlActivity.class.getSimpleName();
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
@@ -111,7 +112,6 @@ public class DeviceControlActivity extends Activity {
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
                 foundIt = displayGattServices(mBluetoothLeService.getSupportedGattServices());
-                Log.d("Cat", action);
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 updateConnectionState(R.string.disconnected);
@@ -119,7 +119,6 @@ public class DeviceControlActivity extends Activity {
                 clearUI();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
-            	Log.d("Cat", action);
                 foundIt = displayGattServices(mBluetoothLeService.getSupportedGattServices());
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
@@ -256,25 +255,34 @@ public class DeviceControlActivity extends Activity {
     		return;
     	}
     	Bundle extras = data.getExtras();
+		
     	if (extras.containsKey("invitees")){
     		String invitees = extras.getString("invitees");
     		List<Integer> mugsToInvite = parseInviteesList(invitees);
     		BluetoothGattService service = getServiceIWant();
+    		BluetoothGattCharacteristic c = getPendingCharacteristic();
+    		Log.d("Cat", "Setting characteristic: " + c.getUuid().toString());
+    		c.setValue(15, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+    		mBluetoothLeService.write(c);
+    		Toast.makeText(this, invitees, Toast.LENGTH_LONG).show();
     		if (service == null) {
+    			Log.d("Cat", "service is null");
     			return;
     		}
 //    		mBluetoothLeService.startInviting(mugsToInvite);
-    		BluetoothGattCharacteristic c = getPendingCharacteristic();
-    		c.setValue(15, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-    		Toast.makeText(this, invitees, Toast.LENGTH_LONG).show();
+//    		BluetoothGattCharacteristic c = getPendingCharacteristic(mBluetoothLeService.getSupportedGattServices());
+//    		c.setValue(15, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+//    		Toast.makeText(this, invitees, Toast.LENGTH_LONG).show();
+    		Log.d("Cat", "Showed toast...");
     	} else {
     		Toast.makeText(this, "Not inviting anyone?", Toast.LENGTH_LONG).show();
     	}
     }
 
     private List<Integer> parseInviteesList(String invitees) {
+    	invitees = invitees.substring(2, invitees.length() - 1);
 		List<Integer> result = new ArrayList<Integer>();
-		List<String> resultString = Arrays.asList(invitees.split("[0-9]+"));
+		List<String> resultString = Arrays.asList(invitees.split(", M"));
 		for (String mug : resultString) {
 			result.add(Integer.parseInt(mug.substring(1))); 
 		}
@@ -282,13 +290,7 @@ public class DeviceControlActivity extends Activity {
 	}
 
 	private BluetoothGattService getServiceIWant(){
-    	for (BluetoothGattService service : mBluetoothLeService.getSupportedGattServices()) {
-    		if (service.getUuid().toString() == SERVICE_I_WANT) {
-    			return service;
-    		}
-    	}
-    	BluetoothGattService result = null;
-    	return result;
+    	return mBluetoothLeService.getServiceByUuid(SERVICE_I_WANT);
     }
 
     private void updateConnectionState(final int resourceId) {
@@ -301,6 +303,8 @@ public class DeviceControlActivity extends Activity {
     }
 
     private void displayData(String data) {
+    	Toast.makeText(this, data, Toast.LENGTH_LONG).show();
+    	Log.d("ACTION_DATA: ", data);
         if (data != null) {
             mDataField.setText(data);
         }
@@ -348,6 +352,10 @@ public class DeviceControlActivity extends Activity {
                 charas.add(gattCharacteristic);
                 HashMap<String, String> currentCharaData = new HashMap<String, String>();
                 uuid = gattCharacteristic.getUuid().toString();
+                if (uuid == PENDING_CHARACTERISTIC) {
+                	gattCharacteristic.setValue(15, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
+            		Toast.makeText(this, "setValue of the charac", Toast.LENGTH_LONG).show();
+                }
 //                String name = gattCharacteristic.getDescriptor(gattCharacteristic.getUuid()).toString();
                 currentCharaData.put(
                         LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
@@ -383,27 +391,26 @@ public class DeviceControlActivity extends Activity {
         return intentFilter;
     }
 
+    /**
+     * Returns the pending characteristic if it exists, and null otherwise.
+     * 
+     * @param services
+     * @return
+     */
     private BluetoothGattCharacteristic getPendingCharacteristic() {
-    	List<BluetoothGattService> services = mBluetoothLeService.getSupportedGattServices();
-    	String uuid;
-    	for (BluetoothGattService gattService : services) {
-    		uuid = gattService.getUuid().toString();
-            if (uuid != SERVICE_I_WANT){
-            	continue;
-            }
-            for (BluetoothGattCharacteristic characteristic : gattService.getCharacteristics()) {
-            	uuid = characteristic.getUuid().toString();
-            	if (uuid == PENDING_CHARACTERISTIC)
-            		return characteristic;
-            }
-    	}
-    	return null;
+    	
+    	BluetoothGattService gattService = mBluetoothLeService.getServiceByUuid(SERVICE_I_WANT);
+    	Log.d("Cat", "My method found: " + gattService.getUuid());
+    	if (gattService == null) {
+        	return null;
+        }
+        return gattService.getCharacteristic(UUID.fromString(PENDING_CHARACTERISTIC));
     }
 
     public void startNext(ArrayList<Integer> mugs) {
     	mugQueue.addAll(mugs);
     	Integer mug = mugQueue.get(0);
-    	BluetoothGattCharacteristic pending = getPendingCharacteristic();
+//    	BluetoothGattCharacteristic pending = getPendingCharacteristic();
 //    	BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(uuid, permissions);
     }
 }

@@ -112,7 +112,6 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-        	Toast.makeText(getApplicationContext(), characteristic.getUuid().toString(), Toast.LENGTH_LONG);
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
@@ -323,6 +322,21 @@ public class BluetoothLeService extends Service {
     public void startInviting(List<Integer> mugs) {
     	mugQueue.addAll(mugs);
     	Integer mug = mugQueue.get(0);
+    	
+    }
+
+    public BluetoothGattService getServiceByUuid(String uuid) {
+    	return getServiceByUuid(UUID.fromString(uuid));
+    }
+    
+    public BluetoothGattService getServiceByUuid(UUID uuid) {
+    	return mBluetoothGatt.getService(uuid);
+    }
+    
+    public void write(BluetoothGattCharacteristic c) {
+    	Log.d("Cat", "writing the characteristic");
+    	mBluetoothGatt.writeCharacteristic(c);
+    	Log.d("Cat", "YaY!!!!");
     	
     }
 }
