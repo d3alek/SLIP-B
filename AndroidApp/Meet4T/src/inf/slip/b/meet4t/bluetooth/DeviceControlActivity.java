@@ -309,17 +309,12 @@ public class DeviceControlActivity extends Activity {
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
     // In this sample, we populate the data structure that is bound to the ExpandableListView
     // on the UI.
-<<<<<<< HEAD
     private boolean displayGattServices(List<BluetoothGattService> gattServices) {
         if (gattServices == null) {
         	Toast.makeText(this, "gattServices is null", Toast.LENGTH_LONG).show();
         	return false;
         }
         //Toast.makeText(this, "gattServices is NOT null, len: " + gattServices.size(), Toast.LENGTH_LONG).show();
-=======
-    private void displayGattServices(List<BluetoothGattService> gattServices) {
-        if (gattServices == null)                                return;
->>>>>>> 21076e32f78d2920e543af30f58c237741f35243
         String uuid = null;
         String unknownServiceString = getResources().getString(R.string.unknown_service);
         String unknownCharaString = getResources().getString(R.string.unknown_characteristic);

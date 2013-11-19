@@ -3,5 +3,5 @@ nrf51_sdk
 *.DS_Store
 _build
 *.log
-
+AndroidApp/Meet4T/bin/*
 
