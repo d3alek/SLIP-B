@@ -33,6 +33,11 @@ public class SampleGattAttributes {
         // Sample Characteristics.
         attributes.put(HEART_RATE_MEASUREMENT, "Heart Rate Measurement");
         attributes.put("00002a29-0000-1000-8000-00805f9b34fb", "Manufacturer Name String");
+        // SLIP B characteristics
+        attributes.put("00001523-1212-efde-1523-785feabcd123", "SLIP B kettle service -- string provided by app");
+        attributes.put("00001524-1212-efde-1523-785feabcd123", "Accepted -- string provided by app");
+        attributes.put("00001525-1212-efde-1523-785feabcd123", "Declined -- string provided by app");
+        attributes.put("00001526-1212-efde-1523-785feabcd123", "Pending -- string provided by app");
     }
 
     public static String lookup(String uuid, String defaultName) {

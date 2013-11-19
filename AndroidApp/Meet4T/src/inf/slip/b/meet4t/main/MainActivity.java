@@ -104,7 +104,6 @@ public class MainActivity extends Activity {
 
 	private void bleNotification(int message) {
 	    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-		
 	}
 
 	private void invitePeople() {
