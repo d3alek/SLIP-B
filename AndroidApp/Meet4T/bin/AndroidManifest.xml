@@ -40,7 +40,7 @@
     		    android:name="inf.slip.b.meet4t.bluetooth.DeviceControlActivity"
         		android:label="@string/app_name"/>
     		<service 
-    		    android:name=".BluetoothLeService" 
+    		    android:name="inf.slip.b.meet4t.bluetooth.BluetoothLeService" 
         		android:enabled="true"/>
     		<activity 
     		    android:name="inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity"

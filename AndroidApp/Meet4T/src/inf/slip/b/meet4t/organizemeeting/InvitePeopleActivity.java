@@ -6,6 +6,7 @@ import inf.slip.b.meet4t.R;
 import java.util.List;
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -35,6 +36,10 @@ public class InvitePeopleActivity extends ListActivity {
 		}
 
 		private void invitePeople(List<String> list) {
-			Toast.makeText(this, list.toString(), Toast.LENGTH_LONG).show();			
+			//Toast.makeText(this, list.toString(), Toast.LENGTH_SHORT).show();
+			Intent i = getIntent();
+			i.putExtra("invitees", list.toString());
+			setResult(RESULT_OK, i);
+			finish();
 		}
 	}
