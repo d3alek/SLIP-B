@@ -105,13 +105,22 @@ public class BluetoothLeService extends Service {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+            	Log.i("Cat", "onCharacteristicRead");
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
+        }
+        
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt p1, BluetoothGattCharacteristic p2, int p3) {
+        	super.onCharacteristicWrite(p1, p2, p3);
+        	Log.i("Cat", "onCharacteristicWrite");
+        	onCharacteristicChanged(p1, p2);
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
+        	Log.i("Cat", "onCharacteristicChanged");
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
