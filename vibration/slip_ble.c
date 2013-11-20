@@ -17,11 +17,12 @@
 
 
 #include "slip_ble.h"
+#include "simple_uart.h"
 
 
 #define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                            /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "SLIP B"                           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "NOT SLIP B"                           /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -93,6 +94,7 @@ static void leds_init(void)
 }
 
 
+
 /**@brief Function for the Timer initialization.
  *
  * @details Initializes the timer module.
@@ -117,7 +119,7 @@ static void gap_params_init(void)
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
-    err_code = sd_ble_gap_device_name_set(&sec_mode, DEVICE_NAME, strlen(DEVICE_NAME));
+    err_code = sd_ble_gap_device_name_set(&sec_mode,(const uint8_t *) DEVICE_NAME, strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code);
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
@@ -146,7 +148,7 @@ static void advertising_init(void)
 
     ble_uuid_t adv_uuids[] = {{MS_UUID_SERVICE, m_ms.uuid_type}};
 
-    // Build and set advertising data
+    //Build and set advertising data
     memset(&advdata, 0, sizeof(advdata));
     advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     advdata.include_appearance      = true;
@@ -166,22 +168,69 @@ static void advertising_init(void)
  * @detail A pointer to this function is passed to the service in its init structure.
  */
 
-static void pending_write_handler(ble_ms_t * p_ms, uint8_t data,uint16_t len)
+static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
 {
-     uint32_t      err_code;
 
-    //update database
-    err_code = sd_ble_gatts_value_set(p_ms->pending_char_handles.value_handle,
-                                          0,
-                                          &len,
-                                          data);
-    APP_ERROR_CHECK(err_code);
 
-    //init pending set to zero
-    memset(p_ms->pending_ids, 0, sizeof(p_ms->pending_ids));
+    uint32_t      err_code;
+    uint64_t      rec_id;
 
-    //update pending list to written data
-    id_decode(data,len,p_ms->pending_ids);
+    unsigned char buf[32];
+   
+    rec_id = id_decode(data);
+
+    //255
+    if(rec_id == 0xFF){
+       //init pending set to zero
+       p_ms->pending_size = 0;
+       memset(p_ms->pending_ids, 0, sizeof(p_ms->pending_ids));
+       simple_uart_putstring("PENDING RESET\n");
+
+    }
+    else{
+      //update pending list to written data
+      p_ms->pending_ids[p_ms->pending_size] =  rec_id;
+      p_ms->pending_size = p_ms->pending_size + 1;
+
+      sprintf((char*)buf, "BLE WRITE %llX\n",rec_id);
+      simple_uart_putstring(buf);
+
+     }
+
+     //update database
+     uint16_t zlen = sizeof(uint8_t);
+     uint8_t zero = 0;
+     err_code = sd_ble_gatts_value_set(p_ms->pending_char_handles.value_handle,
+                                           0,
+                                           &zlen,
+                                           &zero);
+     APP_ERROR_CHECK(err_code);
+
+
+     // Send updated value to client
+     ble_gatts_hvx_params_t hvx_params;
+     uint16_t               hvx_len;
+     hvx_len = zlen;
+         
+       
+     memset(&hvx_params, 0, sizeof(hvx_params));
+
+         
+     hvx_params.handle   = p_ms->pending_char_handles.value_handle;
+     hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
+     hvx_params.offset   = 0;
+     hvx_params.p_len    = &hvx_len;
+     hvx_params.p_data   = &zero;
+
+     //sd_ble_gatts_sys_attr_set(p_ms->conn_handle, NULL, 0);
+     err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
+
+     if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        sprintf((char*)buf, "Pending write ERR %X\n",err_code);
+        simple_uart_putstring(buf);
+        APP_ERROR_CHECK(err_code);
+     }
+    
 
 }
 
@@ -444,9 +493,21 @@ int is_connected(){
 
 
 
+void debug_ble_ids(){
+  int i;
+  unsigned char buf[32];
+
+  for(i=0;i< m_ms.pending_size; i++){
+    sprintf((char*)buf, "MUG ID %d: %llX\n",i,m_ms.pending_ids[i]);
+    simple_uart_putstring(buf);
+     
+  }
+
+}
+
 /**@brief Function for application main entry.
  */
-void start_ble(void)
+ble_ms_t* start_ble(void)
 {
     // Initialize
     conn = 0;
@@ -465,7 +526,7 @@ void start_ble(void)
     // Start execution
     advertising_start();
 
-
+    return(&m_ms);
 }
 
 /**

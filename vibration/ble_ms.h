@@ -50,7 +50,7 @@
 typedef struct ble_ms_s ble_ms_t;
 
 /**@brief Meeting Service event handler type. */
-typedef void (*ble_ms_pending_write_handler_t) (ble_ms_t * p_ms, uint8_t data[], uint16_t length);
+typedef void (*ble_ms_pending_write_handler_t) (ble_ms_t * p_ms, uint8_t data[]);
 
 /**@brief Meeting Service init structure. This contains all options and data needed for
  *        initialization of the service.*/
@@ -72,6 +72,7 @@ typedef struct ble_ms_s
     uint64_t                     pending_ids[MAX_LEN]; 
     uint64_t                     accepted_ids[MAX_LEN]; 
     uint64_t                     declined_ids[MAX_LEN]; 
+    uint8_t                      pending_size; 
     bool                         is_notifying;
     ble_ms_pending_write_handler_t  pending_write_handler;
 } ble_ms_t;
@@ -96,11 +97,11 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init);
 void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt);
 
 //TODO add brief
-uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint64_t * decoded_buffer);
+uint64_t id_decode(uint8_t* encoded_ids);
 //TODO add brief
-uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len);
+uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len);
 //TODO add brief
-uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len);
+uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len);
 
 #endif // BLE_MS_H__
 
