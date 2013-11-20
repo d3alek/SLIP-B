@@ -148,7 +148,8 @@ public class BluetoothLeService extends Service {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
-                intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
+                intent.putExtra(EXTRA_DATA, characteristic.getUuid().toString()); //new String(data) + "\n" + stringBuilder.toString());
+                Log.d("Cat", "\"" + characteristic.getStringValue(0) + "\"");
             }
         }
         sendBroadcast(intent);
@@ -331,6 +332,15 @@ public class BluetoothLeService extends Service {
     
     public BluetoothGattService getServiceByUuid(UUID uuid) {
     	return mBluetoothGatt.getService(uuid);
+    }
+
+    public BluetoothGattCharacteristic getCharacteristicByUuid(UUID uuid) {
+    	for (BluetoothGattService service : mBluetoothGatt.getServices()) {
+    		if (service.getCharacteristic(uuid) != null ) {
+    			return service.getCharacteristic(uuid); 
+    		}
+    	}
+    	return null;
     }
     
     public void write(BluetoothGattCharacteristic c) {
