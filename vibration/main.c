@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include "nrf_temp.h"
 #include "nrf_soc.h"
 #include "nrf_delay.h"
 #include "twi_master.h"
@@ -13,7 +14,6 @@
 #include "radio_config.h"
 
 static uint8_t packet[PACKET_PAYLOAD_MAXSIZE];  // Packet to transmit.
-
 
 void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
 {
@@ -48,38 +48,79 @@ void send_packet(void)
 		}
 }
 
+/*
+==============================================
+Function: initialize_all(void)
+
+	Initialize oscillator, radio, bluetooth,
+	twi and vibration	
+
+==============================================
+ */
+static void initialize_all(int8_t useTemperature) 
+{
+	// Start 16 MHz crystal oscillator.
+	NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
+	NRF_CLOCK->TASKS_HFCLKSTART    = 1;
+	
+        // oscillator
+	while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {
+		// busy wait until the oscilator is up and running
+	}
+	
+	simple_uart_config(0, 23, 0, 22, 0);
+	simple_uart_putstring("INIT\n");
+	
+	// initiliaze radio
+	simple_uart_putstring("RADIO INIT\n");
+        radio_configure(); 
+        simple_uart_putstring("DONE RADIO INIT\n");
+
+	// initialize bluetooth
+	start_ble(); 
+	simple_uart_putstring("BLUETOOTH STARTED\n");
+		
+	// initialize twi
+	simple_uart_putstring("TWI MASTER INIT\n");
+	twi_master_init(); 
+	simple_uart_putstring("DONE TWI MASTER INIT\n");
+		
+	// initialize vibration
+	simple_uart_putstring("INIT VIBRATION\n");
+	init_vibration();
+	simple_uart_putstring("INIT VIBRATION DONE\n");
+
+	// initialize temperature
+	if (useTemperature) {
+		nrf_temp_init();
+	}
+}
+
+/*
+==============================================
+Function: main()
+
+	Entry point of the application.
+
+==============================================
+ */
+
 int main()
 {
-	 // Start 16 MHz crystal oscillator.
-	 NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
-	 NRF_CLOCK->TASKS_HFCLKSTART    = 1;
-	
-		// // Wait for the external oscillator to start up.
-		 while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}
-		
-		simple_uart_config(0, 23, 0, 22, 0);
-		simple_uart_putstring("INIT\n");
-		
-		simple_uart_putstring("RADIO INIT\n");
-	        radio_configure();
-	        simple_uart_putstring("DONE RADIO INIT\n");
+	// This function contains workaround for PAN_028 rev2.0A anomalies 28, 29,30 and 31.
+    	// stops the compiler optimizing anything to do with this variable
+    	int32_t volatile temperatureTemp;
+	uint8_t temperatureToReach = 100;
+	uint8_t currentTemperature;
+	int8_t hasReachedTemperature = 0;
+	int8_t useTemperature = 0;
+    
+	// the following commmented line starts the led range and was included in the sample temperature file
+    	//nrf_gpio_range_cfg_output(LED_START, LED_STOP);
 
-		start_ble();
-		simple_uart_putstring("BLUETOOTH STARTED\n");
-		
-		simple_uart_putstring("TWI MASTER INIT\n");
-		twi_master_init();
-		simple_uart_putstring("DONE TWI MASTER INIT\n");
-		
+		// Initialize
+		initialize_all(useTemperature);
 
-
-
-
-		simple_uart_putstring("INIT VIBRATION\n");
-		init_vibration();
-		simple_uart_putstring("INIT VIBRATION DONE\n");
-
-	
 		// Enable LED
 		nrf_gpio_cfg_output(0);
 		
@@ -92,6 +133,38 @@ int main()
 		uint8_t uart_data;
 		char* buf[30];
 		while (1) {
+
+			if (useTemperature) {
+			// get temperature
+			if (!hasReachedTemperature) {
+		        	NRF_TEMP->TASKS_START = 1; /** Start the temperature measurement. */
+
+        			/* Busy wait while temperature measurement is not finished, you can skip waiting if you enable interrupt for DATARDY event and read the result in the interrupt. */
+		        	/*lint -e{845} // A zero has been given as right argument to operator '|'" */
+		        	while (NRF_TEMP->EVENTS_DATARDY == 0)            
+        			{
+            				// Do nothing.
+		        	}
+		        	NRF_TEMP->EVENTS_DATARDY    = 0;  
+        
+	       			/**@note Workaround for PAN_028 rev2.0A anomaly 29 - TEMP: Stop task clears the TEMP register. */       
+       	 			temperatureTemp                        = (nrf_temp_read()/4);
+        
+			        /**@note Workaround for PAN_028 rev2.0A anomaly 30 - TEMP: Temp module analog front end does not power down when DATARDY event occurs. */
+		        	NRF_TEMP->TASKS_STOP        = 1; /** Stop the temperature measurement. */
+
+				// the follpowing line is from the sample temperature file. It writes the temperature to a given gpio port.
+	        		//nrf_gpio_port_write(NRF_GPIO_PORT_SELECT_PORT1, (uint8_t)(temperatureTmp));
+
+				currentTemperature = (uint8_t)(temperatureTemp);
+				
+				// check if we've reached the correct temperature
+				if (currentTemperature >= temperatureToReach) {
+					hasReachedTemperature = 1;
+				}
+			}
+			}
+
 			if ( is_connected() ) {
 				simple_uart_putstring("IMCONNECTED !!dd!\n");
 				nrf_gpio_pin_toggle(0);
