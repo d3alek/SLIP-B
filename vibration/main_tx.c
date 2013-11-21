@@ -170,11 +170,8 @@ int main(){
 	uint8_t uart_data;
 	char* buf[32];
 
-    radio_configure();
-    simple_uart_putstring("Radio init\n");
-
-	// start_ble();
-	// simple_uart_putstring("Bluetooth init\n");
+	start_ble();
+	simple_uart_putstring("Bluetooth init\n");
 
 	twi_master_init();
 	simple_uart_putstring("TWI master init\n");
@@ -191,11 +188,9 @@ int main(){
 	// initialize temperature
 	nrf_temp_init();
 
-	// uint64_t this_device_id = ((uint64_t) NRF_FICR->DEVICEID[1] << 32) | ((uint64_t) NRF_FICR->DEVICEID[0]);
-	// sprintf((char*)buf, "ID: %llx\n",  this_device_id);
-	// simple_uart_putstring(buf);
 	uint64_t device_id = 0xd163bbdd530ec035;  // Chip without buttons
-	bool receiving = false;
+
+	bool radio_executed = false;
 
 	// main application loop
 	while (1) {
@@ -210,64 +205,60 @@ int main(){
 			find_temperature(&temperatureToReach, &temperatureDifference, &currentTemperature, &hasReachedTemperature);
 		}
 
-		// if ( is_connected() ) {
-			// simple_uart_putstring("Bluetooth connection started\n");
-			// nrf_delay_ms(200);
+		if ( !radio_executed ) {
+		    sd_softdevice_disable();
+			simple_uart_putstring("Disabled soft device\n");
+			radio_configure();
+			simple_uart_putstring("Configured radio\n");
 
-				// Discover
-				packet[0] = (uint64_t) 0xcfcf;
-				packet[1] = device_id;
+			// Discover
+			packet[0] = (uint64_t) 0xcfcf;
+			packet[1] = device_id;
 
-				send_packet(1);
+			send_packet(1);
 
-				if (receive_packet(50)){
-					if (packet[0] == 0xaf && packet[1] == device_id) {
-						simple_uart_putstring("ACKed\n");
-					}
+			if (receive_packet(50)){
+				if (packet[0] == 0xaf && packet[1] == device_id) {
+					simple_uart_putstring("ACKed\n");
 				}
+			}
 
-					// Remove this when loop is implemented
-					nrf_delay_ms(5000);
+				// Remove this when loop is implemented
+				nrf_delay_ms(5000);
 
-				// Get availability
-				packet[0] = (uint64_t) 0xabab;
-				packet[1] = device_id;
+			// Get availability
+			packet[0] = (uint64_t) 0xabab;
+			packet[1] = device_id;
 
-				send_packet(1);
+			send_packet(1);
 
-				if (receive_packet(50)){
-					if (packet[0] == 0xaa && packet[1] == device_id) {
-						simple_uart_putstring("Accepted\n");
-					} else if (packet[0] == 0xff && packet[1] == device_id) {
-						simple_uart_putstring("Rejected\n");
-					}
+			if (receive_packet(50)){
+				if (packet[0] == 0xaa && packet[1] == device_id) {
+					simple_uart_putstring("Accepted\n");
+				} else if (packet[0] == 0xff && packet[1] == device_id) {
+					simple_uart_putstring("Rejected\n");
 				}
+			}
 
-				// Vibrate
-				// TODO: don't send invitation to rejected mugs
-				packet[0] = (uint64_t) 0xdede;
-				packet[1] = device_id;
+			// Vibrate
+			// TODO: don't send invitation to rejected mugs
+			packet[0] = (uint64_t) 0xdede;
+			packet[1] = device_id;
 
-				send_packet(1);
+			send_packet(1);
 
-				if (receive_packet(50)){
-					if (packet[0] == 0xaf && packet[1] == device_id) {
-						simple_uart_putstring("ACKed\n");
-					}
+			if (receive_packet(50)){
+				if (packet[0] == 0xaf && packet[1] == device_id) {
+					simple_uart_putstring("ACKed\n");
 				}
+			}
 
+	        sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
+			simple_uart_putstring("Enabled soft device\n");
 
-		    // sd_softdevice_disable();
-			// simple_uart_putstring("Disabled soft device\n");
-			// radio_configure();
-			// simple_uart_putstring("Configured radio\n");
-
-
-	        // sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
-			// simple_uart_putstring("Enabled soft device\n");
-		// }
+			// radio_executed = true;
+		}
 		// vibration_update();
 		app_sched_execute();
-		//power_manage(); // hangs, while loop stops here
 	}
 }

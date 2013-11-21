@@ -2,15 +2,28 @@ TARGET_CHIP := NRF51822_QFAA_CA
 BOARD := BOARD_NRF6310
 
 C_SOURCE_FILES += main_tx.c
-C_SOURCE_FILES += radio_config.c
-C_SOURCE_FILES += nrf_delay.c
 
-C_SOURCE_FILES += twi_hw_master.c
-# C_SOURCE_FILES += twi_sw_master.c
-C_SOURCE_FILES += libjanek.c
+C_SOURCE_FILES += radio_config.c
+C_SOURCE_FILES += slip_ble.c
 C_SOURCE_FILES += libalek.c
+
+C_SOURCE_FILES += twi_sw_master.c
+
+C_SOURCE_FILES += ble_advdata.c
+C_SOURCE_FILES += ble_stack_handler.c
+C_SOURCE_FILES += ble_conn_params.c
+C_SOURCE_FILES += ble_ms.c
+
+C_SOURCE_FILES += nrf_delay.c
 C_SOURCE_FILES += simple_uart.c
+C_SOURCE_FILES += libjanek.c
+
+C_SOURCE_FILES += app_timer.c
+C_SOURCE_FILES += app_button.c
 C_SOURCE_FILES += app_scheduler.c
+C_SOURCE_FILES += app_gpiote.c
+
+
 
 OUTPUT_FILENAME := radio_rx_example_gcc
 SDK_PATH := ../nrf51_sdk/
