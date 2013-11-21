@@ -124,7 +124,11 @@ public class DeviceControlActivity extends Activity {
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	Log.i("Cat", "action data available");
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
-                inviteNextMug(mNotifyCharacteristic);
+                Log.i("Alek", "data is " + data);
+
+                if (data.equals("00001526-1212-efde-1523-785feabcd123")) {
+	                inviteNextMug(mNotifyCharacteristic);
+                }
             }
         }
     };
@@ -305,9 +309,13 @@ public class DeviceControlActivity extends Activity {
 //    		Log.d("CAT", c.getStringValue(0));
 //    		mBluetoothLeService.write(c);
 //    		Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
-
-    		inviteNextMug(c);
-    		notify(c);
+    		if (c != null) {
+	    		inviteNextMug(c);
+	    		notify(c);
+    		}
+    		else {
+    			Log.i(TAG, "onActivityResult invitees c is null");
+    		}
     		if (service == null) {
     			Log.d("Cat", "service is null");
     			return;
@@ -441,7 +449,12 @@ public class DeviceControlActivity extends Activity {
      */
     private BluetoothGattCharacteristic getPendingCharacteristic() {
     	BluetoothGattService gattService = mBluetoothLeService.getServiceByUuid(SERVICE_I_WANT);
-    	Log.d("Cat", "My method found: " + gattService.getUuid());
+    	if (gattService == null) {
+    		Log.i(TAG, "Can't see gat service " + SERVICE_I_WANT);
+    	}
+    	else {
+    		Log.d("Cat", "My method found: " + gattService.getUuid());
+    	}
     	if (gattService == null) {
         	return null;
         }
@@ -463,7 +476,14 @@ public class DeviceControlActivity extends Activity {
 
     private void inviteNextMug(BluetoothGattCharacteristic c) {
 //    	BluetoothGattCharacteristic c = getPendingCharacteristic();
-		Log.d("Cat", "Setting characteristic: " + c.getUuid().toString());
+    	if (c == null) {
+    		Log.i(TAG, "inviteNextMug characteristic is null");
+    		return;
+    	}
+//    	}
+    	else {
+    		Log.d("Cat", "Setting characteristic: " + c.getUuid().toString());
+    	}
 		String nextMug = getNextMug();
 		if(nextMug != null) {
 			nextMug = nextMug + "0000000000000000".substring(nextMug.length());

@@ -16,6 +16,7 @@
 
 package inf.slip.b.meet4t.bluetooth;
 
+import java.text.Format;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -152,13 +153,21 @@ public class BluetoothLeService extends Service {
             intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
         } else {
             // For all other profiles, writes the data formatted in HEX.
+        	Log.i(TAG, "broadcastUpdate " + characteristic.getUuid());
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
                 intent.putExtra(EXTRA_DATA, characteristic.getUuid().toString()); //new String(data) + "\n" + stringBuilder.toString());
-                Log.d("Cat", "\"" + characteristic.getStringValue(0) + "\"");
+                Log.d("Cat", "\"" + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 3))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 4))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6))
+                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7)) + "\"");
             }
         }
         sendBroadcast(intent);
