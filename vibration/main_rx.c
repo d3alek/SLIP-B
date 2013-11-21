@@ -31,12 +31,12 @@
 #include "simple_uart.h"
 
 
-static uint8_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet buffer. */
+static uint64_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet buffer. */
 
 void send_packet(uint8_t rep)
 {
   // Set payload pointer.
-  NRF_RADIO->PACKETPTR = (uint32_t)packet;
+  NRF_RADIO->PACKETPTR = &packet;
   uint8_t i;
   for (i=0; i<rep; i++)
   {
@@ -94,7 +94,7 @@ int main(void)
     uint8_t ack;
 
     // vibration_update();
-    NRF_RADIO->PACKETPTR    = (uint32_t) packet; // Set payload pointer.
+    NRF_RADIO->PACKETPTR    = &packet; // Set payload pointer.
     NRF_RADIO->EVENTS_READY = 0U;
     NRF_RADIO->TASKS_RXEN   = 1U; // Enable radio.
 
@@ -107,7 +107,7 @@ int main(void)
 
     if (NRF_RADIO->CRCSTATUS == 1U) { // Write received data to port 1 on CRC match.
       nrf_gpio_pin_toggle(0);
-      sprintf((char*)buf, "%x ", packet[0]);
+      sprintf((char*)buf, "%llx %llx\n", packet[0], packet[1]);
       simple_uart_putstring(buf);
       if (packet[0] == 0xcf) // Master init sequence
       {
@@ -115,9 +115,9 @@ int main(void)
         id_c = 0;
         // simple_uart_putstring("Master init sequence\n");
       } else {
-        device_id = device_id | ( ((uint64_t) packet[0]) << (id_c * 8) );
+        device_id = packet[0];
         id_c++;
-        if (id_c == 8)
+        if (id_c == 1)
         {
           if (this_device_id == device_id)
           {
