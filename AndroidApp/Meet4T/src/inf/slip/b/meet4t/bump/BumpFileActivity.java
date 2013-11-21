@@ -35,6 +35,7 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.ParentReference;
+import com.google.api.services.drive.model.Permission;
 
 public class BumpFileActivity extends Activity {
 
@@ -176,13 +177,18 @@ public class BumpFileActivity extends Activity {
 					String folderId = mSharedPrefs.getString(KEY_FOLDER_ID, null);
 
 					if (folderId == null) {
-						FileList list = mService.files().list();
+						File folder = null;
+						FileList list = mService.files().list().execute();
+						for (File file:list.getItems()) {
+							if (file.getTitle().equals(getResources().getString(R.string.app_name))) {
+								folder = file;
+							}
+						}
 						if (folder != null) {
 							File folderDesc = new File();
 							folderDesc.setTitle(getResources().getString(R.string.app_name));
 							folderDesc.setMimeType("application/vnd.google-apps.folder");
 							folder = mService.files().insert(folderDesc).execute();
-
 						}
 						Editor e = mSharedPrefs.edit();
 						folderId = folder.getId();
@@ -199,6 +205,10 @@ public class BumpFileActivity extends Activity {
 					ParentReference reference = new ParentReference();
 					reference.setId(folderId);
 					body.setParents(Arrays.asList(reference));
+					Permission p = new Permission();
+					p.setRole("reader");
+					p.setType("anoyone");
+					body.setUserPermission(p);
 					File file = mService.files().insert(body, isContent).execute();
 					if (file != null) {
 						showToast("File uploaded: " + file.getTitle());
