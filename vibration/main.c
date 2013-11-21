@@ -205,6 +205,7 @@ int main()
 
 		while (1) {
 
+			// Check the temperature rise.
 			if (useTemperature) {
 				find_temperature(&temperatureToReach, &temperatureDifference, 
 					&currentTemperature, &hasReachedTemperature);	
@@ -250,9 +251,9 @@ int main()
 					simple_uart_putstring("enable soft device\n");
 			}
 		
-			//vibration_update();
-			//app_sched_execute(); 
-				//power_manage(); // hangs, while loop stops here
+			vibration_update();
+			app_sched_execute(); 
+			//power_manage(); // hangs, while loop stops here
 			nrf_delay_ms(500);
 		}
 }
