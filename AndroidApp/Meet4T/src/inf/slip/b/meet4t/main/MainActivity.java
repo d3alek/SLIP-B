@@ -2,6 +2,7 @@ package inf.slip.b.meet4t.main;
 
 import inf.slip.b.meet4t.R;
 import inf.slip.b.meet4t.bluetooth.DeviceScanActivity;
+import inf.slip.b.meet4t.bump.BumpFileActivity;
 import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -51,6 +52,15 @@ public class MainActivity extends Activity {
             	invitePeople();
         		}
         });
+		final Button bumpFileButton = (Button) findViewById(R.id.bump_button);
+		bumpFileButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(MainActivity.this, BumpFileActivity.class);
+				startActivity(i);
+			}
+		});
 	}
 
 	@Override

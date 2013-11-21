@@ -34,5 +34,6 @@
     <string name="show_people">Show people</string>
     <string name="invite">Invite</string>
     <string name="invite_people">Invite people</string>
+    <string name="bump_file">Bump file</string>
 
 </resources>

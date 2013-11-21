@@ -5,20 +5,28 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="18"
+        android:minSdkVersion="9"
         android:targetSdkVersion="18" />
 
-		<uses-permission android:name="android.permission.BLUETOOTH"/>
-		<uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-		<uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
-		<uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+    <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        
+       	<meta-data
+       	    android:name="com.google.android.gms.version"  android:value="4030500"/>
+        
         <activity
             android:name="inf.slip.b.meet4t.main.MainActivity"
             android:label="@string/app_name" >
@@ -28,23 +36,35 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity 
+        <activity
             android:name="inf.slip.b.meet4t.bluetooth.DeviceScanActivity"
-            android:label="@string/app_name">
-        		<intent-filter>
-            		<action android:name="android.intent.action.MAIN"/>
-            		<category android:name="android.intent.category.LAUNCHER"/>
-        		</intent-filter>
-    		</activity>
-    		<activity 
-    		    android:name="inf.slip.b.meet4t.bluetooth.DeviceControlActivity"
-        		android:label="@string/app_name"/>
-    		<service 
-    		    android:name="inf.slip.b.meet4t.bluetooth.BluetoothLeService" 
-        		android:enabled="true"/>
-    		<activity 
-    		    android:name="inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity"
-        		android:label="@string/app_name"/>
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="inf.slip.b.meet4t.bluetooth.DeviceControlActivity"
+            android:label="@string/app_name" />
+
+        <service
+            android:name="inf.slip.b.meet4t.bluetooth.BluetoothLeService"
+            android:enabled="true" />
+
+        <activity
+            android:name="inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity"
+            android:label="@string/app_name" />
+        <activity android:name="inf.slip.b.meet4t.bump.BumpFileActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
