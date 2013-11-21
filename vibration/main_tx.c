@@ -22,8 +22,7 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
 }
 
 // ======= RADIO COMMS =========
-void send_packet(uint8_t rep)
-{
+void send_packet(uint8_t rep){
 	// Set payload pointer.
 	NRF_RADIO->PACKETPTR = &packet;
 	uint8_t i;
@@ -46,10 +45,41 @@ void send_packet(uint8_t rep)
 	}
 }
 
+bool receive_packet(uint64_t timeout){
+	bool incoming_msg = true;
+
+	NRF_RADIO->PACKETPTR    = &packet; // Set payload pointer.
+	NRF_RADIO->EVENTS_READY = 0U;
+	NRF_RADIO->TASKS_RXEN   = 1U; // Enable radio.
+
+	while(NRF_RADIO->EVENTS_READY == 0U) {} // Wait for an event to be ready.
+
+	NRF_RADIO->EVENTS_END  = 0U;
+	NRF_RADIO->TASKS_START = 1U; // Start listening and wait for address received event.
+
+	while(NRF_RADIO->EVENTS_END == 0U) { // Wait for the end of the packet.
+		if (timeout-- > 0) {
+		    nrf_delay_ms(1);
+		} else {
+		    simple_uart_putstring("Timeout!\n");
+		    incoming_msg = false;
+		    break;
+		}
+	}
+
+	if (NRF_RADIO->CRCSTATUS == 1U) {} // Write received data to port 1 on CRC match.
+
+	NRF_RADIO->EVENTS_DISABLED = 0U;
+	NRF_RADIO->TASKS_DISABLE   = 1U;  // Disable the radio.
+
+	while(NRF_RADIO->EVENTS_DISABLED == 0U) {}
+
+	return incoming_msg;
+}
+
 // ======= END - RADIO COMMS =========
 
-int main()
-{
+int main(){
 	// Start 16 MHz crystal oscillator.
 	NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 	NRF_CLOCK->TASKS_HFCLKSTART    = 1;
@@ -73,104 +103,71 @@ int main()
 	// init_vibration();
 	// simple_uart_putstring("Vibration init\n");
 
-	// Enable LED
-	nrf_gpio_cfg_output(0);
-
-	uint64_t this_device_id = ((uint64_t) NRF_FICR->DEVICEID[1] << 32) | ((uint64_t) NRF_FICR->DEVICEID[0]);
-	sprintf((char*)buf, "ID: %llx\n",  this_device_id);
-	simple_uart_putstring(buf);
+	// uint64_t this_device_id = ((uint64_t) NRF_FICR->DEVICEID[1] << 32) | ((uint64_t) NRF_FICR->DEVICEID[0]);
+	// sprintf((char*)buf, "ID: %llx\n",  this_device_id);
+	// simple_uart_putstring(buf);
 	uint64_t device_id = 0xd163bbdd530ec035;  // Chip without buttons
-
-	uint8_t id_c;
-	bool seq_start = true;
-	bool sending = false;
 	bool receiving = false;
 
 	while (1) {
-		if (receiving) {
-			simple_uart_putstring("Ready to receive!\n");
-			NRF_RADIO->PACKETPTR    = &packet; // Set payload pointer.
-			NRF_RADIO->EVENTS_READY = 0U;
-			NRF_RADIO->TASKS_RXEN   = 1U; // Enable radio.
-			while(NRF_RADIO->EVENTS_READY == 0U) {} // Wait for an event to be ready.
-			NRF_RADIO->EVENTS_END  = 0U;
-			NRF_RADIO->TASKS_START = 1U; // Start listening and wait for address received event.
-
-			int timeout = 20;
-			bool incoming_msg = true;
-			while(NRF_RADIO->EVENTS_END == 0U) { // Wait for the end of the packet.
-				// if (timeout-- > 0) {
-				//     nrf_delay_ms(1);
-				// } else {
-				//     incoming_msg = false;
-				//     break;
-				// }
-			}
-
-			if (incoming_msg){
-				if (NRF_RADIO->CRCSTATUS == 1U) { // Write received data to port 1 on CRC match.
-					if (packet[0] == 0xa0) {
-						simple_uart_putstring("Rejected!\n");
-					} else if (packet[0] == 0xaf) {
-						simple_uart_putstring("Accepted!\n");
-					} else {
-						simple_uart_putstring("Error!\n");
-					}
-				}
-			}
-			NRF_RADIO->EVENTS_DISABLED = 0U;
-			NRF_RADIO->TASKS_DISABLE   = 1U;  // Disable the radio.
-			while(NRF_RADIO->EVENTS_DISABLED == 0U) {}
-			receiving = false;
-		}
-		if (!sending) {
-			// Block execution until you get Serial (sends 2 bytes)
-			simple_uart_putstring("Ready to send!\n");
-			uart_data = simple_uart_get();
-			uart_data = simple_uart_get();
-			sending = !sending;
-			simple_uart_putstring("Sending!\n");
-		}
+		// Block execution until you get Serial (2 bytes including \n)
+		simple_uart_putstring("Ready to send!\n");
+		uart_data = simple_uart_get();
+		uart_data = simple_uart_get();
+		simple_uart_putstring("Sending!\n");
 
 
 		// if ( is_connected() ) {
 			// simple_uart_putstring("Bluetooth connection started\n");
-			nrf_gpio_pin_toggle(0);
 			// nrf_delay_ms(200);
 
-			if (seq_start) {
-				seq_start = false;
-				// Packet to send over radio
-				packet[0] = (uint64_t) 0xcf;
+				// Discover
+				packet[0] = (uint64_t) 0xcfcf;
+				packet[1] = device_id;
 
-				nrf_gpio_pin_set(0);
-				// nrf_delay_ms(1000);
-			} else {
-				// Packet to send over radio
-				packet[0] = device_id;
-				packet[1] = this_device_id;
+				send_packet(1);
 
-				nrf_gpio_pin_toggle(0);
-				// nrf_delay_ms(200);
-
-				if (id_c == 0) {
-					id_c++;
+				if (receive_packet(50)){
+					if (packet[0] == 0xaf && packet[1] == device_id) {
+						simple_uart_putstring("ACKed\n");
+					}
 				}
-				else {
-					id_c = 0;
-					sending = false;
-					receiving = true;
-					seq_start = true;
-					simple_uart_putstring("Sent!\n");
+
+					// Remove this when loop is implemented
+					nrf_delay_ms(5000);
+
+				// Get availability
+				packet[0] = (uint64_t) 0xabab;
+				packet[1] = device_id;
+
+				send_packet(1);
+
+				if (receive_packet(50)){
+					if (packet[0] == 0xaa && packet[1] == device_id) {
+						simple_uart_putstring("Accepted\n");
+					} else if (packet[0] == 0xff && packet[1] == device_id) {
+						simple_uart_putstring("Rejected\n");
+					}
 				}
-			}
+
+				// Vibrate
+				packet[0] = (uint64_t) 0xdede;
+				packet[1] = device_id;
+
+				send_packet(1);
+
+				if (receive_packet(50)){
+					if (packet[0] == 0xaf && packet[1] == device_id) {
+						simple_uart_putstring("ACKed\n");
+					}
+				}
+
 
 		    // sd_softdevice_disable();
 			// simple_uart_putstring("Disabled soft device\n");
 			// radio_configure();
 			// simple_uart_putstring("Configured radio\n");
 
-			send_packet(1);
 
 	        // sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
 			// simple_uart_putstring("Enabled soft device\n");
@@ -178,6 +175,5 @@ int main()
 		// vibration_update();
 		app_sched_execute();
 		//power_manage(); // hangs, while loop stops here
-		nrf_delay_ms(20);
 	}
 }
