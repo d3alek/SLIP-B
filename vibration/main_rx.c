@@ -1,27 +1,3 @@
-/* Copyright (c) 2009 Nordic Semiconductor. All Rights Reserved.
- *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
- *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
- *
- */
-
-/** @file
-*
-* @defgroup nrf_dev_radio_rx_example_main main.c
-* @{
-* @ingroup nrf_dev_radio_rx_example
-*
-* @brief Radio Receiver Example Application main file.
-*
-* This file contains the source code for a sample application using the NRF_RADIO to receive.
-*
-* @image html example_board_setup_a.jpg "Use board setup A for this example."
-*/
 #include "radio_config.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -166,4 +142,3 @@ int main(void)
         }
     }
 }
-/** @} */

@@ -132,18 +132,18 @@ void find_temperature(uint8_t * temperatureToReach, uint8_t * temperatureDiffere
 	if (!*hasReachedTemperature) {
 
 		// This function contains workaround for PAN_028 rev2.0A anomalies 28, 29,30 and 31.
-	    	// stops the compiler optimizing anything to do with this variable
-	    	int32_t volatile temperatureTemp;
+		// stops the compiler optimizing anything to do with this variable
+		int32_t volatile temperatureTemp;
 
         	NRF_TEMP->TASKS_START = 1;
 
         	while (NRF_TEMP->EVENTS_DATARDY == 0)            
 		{
-       			// Do nothing.
- 	      	}
+			// Do nothing.
+		}
         	NRF_TEMP->EVENTS_DATARDY    = 0;  
      
-		temperatureTemp                        = (nrf_temp_read()/4);
+		temperatureTemp             = (nrf_temp_read()/4);
         
         	NRF_TEMP->TASKS_STOP        = 1; 
 
