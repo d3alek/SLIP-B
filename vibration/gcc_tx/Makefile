@@ -10,6 +10,7 @@ C_SOURCE_FILES += twi_hw_master.c
 C_SOURCE_FILES += libjanek.c
 C_SOURCE_FILES += libalek.c
 C_SOURCE_FILES += simple_uart.c
+C_SOURCE_FILES += app_scheduler.c
 
 OUTPUT_FILENAME := radio_rx_example_gcc
 SDK_PATH := ../nrf51_sdk/

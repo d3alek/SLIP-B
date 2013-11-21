@@ -11,6 +11,7 @@
 #include "simple_uart.h"
 #include "slip_ble.h"
 #include "radio_config.h"
+#include "app_scheduler.h"
 
 static uint8_t packet[PACKET_PAYLOAD_MAXSIZE];  // Packet to transmit.
 
