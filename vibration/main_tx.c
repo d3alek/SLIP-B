@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
+#include "main.h"
 #include "nrf_soc.h"
 #include "nrf_delay.h"
 #include "nrf_temp.h"
@@ -14,6 +15,7 @@
 #include "app_scheduler.h"
 
 static uint64_t packet[PACKET_PAYLOAD_MAXSIZE];  // Packet to transmit.
+static MUG_STATUS MUG_LIST[10];
 
 /*
 ==============================================
