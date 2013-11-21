@@ -2,6 +2,7 @@
 #define __BLE_H
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include "nordic_common.h"
 #include "nrf.h"
@@ -23,8 +24,9 @@
 #include "ble_ms.h"
 #include "ble.h"
 
-void start_ble();
+//ble_ms_t*  start_ble();
 void power_manage(void);
 int is_connected();
+void debug_ble_ids();
 
 #endif // __BLE_H

@@ -105,13 +105,22 @@ public class BluetoothLeService extends Service {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+            	Log.i("Cat", "onCharacteristicRead");
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
+        }
+        
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt p1, BluetoothGattCharacteristic p2, int p3) {
+        	super.onCharacteristicWrite(p1, p2, p3);
+        	Log.i("Cat", "onCharacteristicWrite");
+        	onCharacteristicChanged(p1, p2);
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
+        	Log.i("Cat", "onCharacteristicChanged");
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
@@ -148,7 +157,8 @@ public class BluetoothLeService extends Service {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
-                intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
+                intent.putExtra(EXTRA_DATA, characteristic.getUuid().toString()); //new String(data) + "\n" + stringBuilder.toString());
+                Log.d("Cat", "\"" + characteristic.getStringValue(0) + "\"");
             }
         }
         sendBroadcast(intent);
@@ -331,6 +341,15 @@ public class BluetoothLeService extends Service {
     
     public BluetoothGattService getServiceByUuid(UUID uuid) {
     	return mBluetoothGatt.getService(uuid);
+    }
+
+    public BluetoothGattCharacteristic getCharacteristicByUuid(UUID uuid) {
+    	for (BluetoothGattService service : mBluetoothGatt.getServices()) {
+    		if (service.getCharacteristic(uuid) != null ) {
+    			return service.getCharacteristic(uuid); 
+    		}
+    	}
+    	return null;
     }
     
     public void write(BluetoothGattCharacteristic c) {

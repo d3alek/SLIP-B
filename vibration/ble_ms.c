@@ -12,6 +12,7 @@
 
 #include "ble_ms.h"
 #include <string.h>
+#include "simple_uart.h"
 
 
 #include "app_util.h"
@@ -52,7 +53,8 @@ static void on_write(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
    if ((p_evt_write->handle == p_ms->pending_char_handles.value_handle) &&
        (p_ms->pending_write_handler != NULL))
    {
-       p_ms->pending_write_handler(p_ms, p_evt_write->data,p_evt_write->len);
+       // simple_uart_putstring("pending write\n");
+       p_ms->pending_write_handler(p_ms, p_evt_write->data);
    }
 }
 
@@ -62,6 +64,7 @@ void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
+            simple_uart_putstring("BLE CONN\n");
             on_connect(p_ms, p_ble_evt);
             break;
             
@@ -189,16 +192,26 @@ static uint32_t declined_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_in
 //Adds pending chacteristic to Meeting Service
 static uint32_t pending_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 {
-    ble_gatts_char_md_t char_md;
+     ble_gatts_char_md_t char_md;
+    ble_gatts_attr_md_t cccd_md;
     ble_gatts_attr_t    attr_char_value;
     ble_uuid_t          ble_uuid;
     ble_gatts_attr_md_t attr_md;
     
+    memset(&cccd_md, 0, sizeof(cccd_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+    
+
+    cccd_md.vloc = BLE_GATTS_VLOC_STACK;
 
     memset(&char_md, 0, sizeof(char_md));
     
     char_md.char_props.read   = 1;
+    char_md.char_props.notify = 1;
     char_md.char_props.write  = 1;
+    char_md.char_props.write_wo_resp  = 1;
     char_md.p_char_user_desc  = NULL;
     char_md.p_char_pf         = NULL;
     char_md.p_user_desc_md    = NULL;
@@ -240,6 +253,7 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
     ble_uuid_t ble_uuid;
 
     // Initialize service structure
+    p_ms->pending_size = 0;
     p_ms->conn_handle       = BLE_CONN_HANDLE_INVALID;
     p_ms->pending_write_handler = p_ms_init->pending_write_handler;
     
@@ -283,39 +297,49 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 }
 
 
-//Changes the uint8_t recieves data into a array of uint64_t ids
-uint8_t id_decode(uint8_t* encoded_ids, uint16_t encoded_len, uint64_t * decoded_buffer)
-{  
-    uint8_t num_ids = 0; 
-    int i;
-    int u = 0;;    
-    for(i=0;i< encoded_len; i++){
-        decoded_buffer[num_ids]  = (encoded_ids[i] << (u*8));
-        if(u == 7){
-           u = 0;
-           num_ids++;
-        }
-        else
-          u++;
-    }
-    
-    return num_ids;
+//Changes the uint8_t recieved data into a uint64_t ids
+uint64_t id_decode(uint8_t* encoded_ids)
+{ 
 
+    uint64_t decoded_id = 0;
+    char buf[36];
+    uint8_t ids;
+    
+
+    int i=0;
+    while(encoded_ids[i] != '\0'){
+
+     sprintf((char*)buf, "%c",encoded_ids[i]);
+     ids = strtol(buf,NULL,16);
+     decoded_id = (decoded_id * 16) + ids; 
+
+      i = i+1;
+    }
+
+   
+     return decoded_id;
 }
+
 
 
 //splits each uint64_t id into 8 uint8_t data items so it can by sent by GATT 
 static uint8_t id_encode(uint64_t* ids, uint8_t num_ids, uint8_t * encoded_buffer)
 {  
     uint8_t len = 0;
-    int i;
-    int u;
+    int i,u;
+    char buf[30];
+    char tmp[2];
+
     // Encode id measurement
     for(i=0;i< num_ids; i++){
-         for(u=1;u<=8;u++){
-            encoded_buffer[len++]  = (ids[i] & (0xFF << (64 - u*8))) >> (64 - u*8);
+        sprintf((char*)buf,"%llX",ids[i]);
+        for(u=0;u<16;u++){
+            memcpy(tmp,(buf+u),1);
+            encoded_buffer[len] = strtol(strcat(tmp,"\0"),NULL,16);
+            sprintf((char*)buf, "BLE Encode %X,%c\n",encoded_buffer[len],buf[u]);
+            simple_uart_putstring(buf);
+            len = len+1;
          }
-
     }
   
     return len;  
@@ -323,7 +347,7 @@ static uint8_t id_encode(uint64_t* ids, uint8_t num_ids, uint8_t * encoded_buffe
 
 
 //updates the accepted chracteristic in GATT and notifies the client
-uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len)
+uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len)
 {
     uint32_t err_code = NRF_SUCCESS;
 
@@ -332,7 +356,7 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
     memcpy(p_ms->accepted_ids, ids, sizeof(ids));
 
     //encoded for GATT
-    uint8_t encoded_ids[MAX_LEN * 2]; 
+    uint8_t encoded_ids[MAX_LEN * 16]; 
  
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
@@ -374,7 +398,7 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
 
 
 //updates the declined chracteristic in GATT and notifies the client
-uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len)
+uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len)
 {
     uint32_t err_code = NRF_SUCCESS;
 
@@ -383,7 +407,7 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
     memcpy(p_ms->declined_ids, ids, sizeof(ids));
 
     //encoded for GATT
-    uint8_t encoded_ids[MAX_LEN * 2]; 
+    uint8_t encoded_ids[MAX_LEN * 16]; 
  
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
@@ -421,10 +445,3 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint16_t* ids, uint16_t len
 
     return err_code;
 }
-
-
-
-
-
-
-
