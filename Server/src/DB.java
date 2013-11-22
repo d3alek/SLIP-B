@@ -170,7 +170,7 @@ public class DB {
 	
 	private static void CreateKettleIds() 
 	{
-		_kettleIds.add("kettle1");
+		_kettleIds.add("485322d4e0f44c3d");
 		_kettleIds.add("kettle2");
 		_kettleIds.add("kettle3");
 		_kettleIds.add("kettle4");
@@ -179,16 +179,16 @@ public class DB {
 	
 	private static void CreateContactList() 
 	{
-		_cupIdToContact.put("m255", "alek");
-		_cupIdToContact.put("m015", "catalina");
-		_cupIdToContact.put("m018", "ewan");
-		_cupIdToContact.put("m043", "georgi");
-		_cupIdToContact.put("m077", "markus");
+		_cupIdToContact.put("d163bbdd530ec035", "alek");
+		_cupIdToContact.put("36a5c5d5cc28739a", "catalina");
+		_cupIdToContact.put("e164bcde513cf831", "ewan");
+		_cupIdToContact.put("aj385763j1rl389l", "georgi");
+		_cupIdToContact.put("3jd2j685kld930s1", "markus");
 		
-		_contactToNumber.put("alek", "07777777777");
-		_contactToNumber.put("catalina", "07777777777");
-		_contactToNumber.put("ewan", "07777777777");
-		_contactToNumber.put("georgi", "07777777777");
-		_contactToNumber.put("markus", "07777777777");
+		_contactToNumber.put("alek", "07812345678");
+		_contactToNumber.put("catalina", "07787654321");
+		_contactToNumber.put("ewan", "07984613457");
+		_contactToNumber.put("georgi", "07164831325");
+		_contactToNumber.put("markus", "07717483647");
 	}
 }

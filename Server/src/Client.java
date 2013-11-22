@@ -1,21 +1,19 @@
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
-import java.net.UnknownHostException;
 
 
 public class Client {
 	private static Socket socket;
 	private static PrintWriter out;
     private static BufferedReader in;
-    private static final String serverURL = "http://129.215.59.128:8080/test";
-	
+    private static final String serverURL = "http://54.201.81.197:8080/test";
+    //private static final String serverURL = "http://localhost:8080/test";
+    
 	// runner method
 	public static void main(String[] args) {
 	
@@ -60,12 +58,12 @@ public class Client {
  
 		// body
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
-		writer.write("kettle1 cups");
+		writer.write("485322d4e0f44c3d cups");
 		writer.close();
 		
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: kettle1");
+		System.out.println("With body: 485322d4e0f44c3d cups");
 		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
@@ -101,12 +99,12 @@ public class Client {
  
 		// body
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
-		writer.write("kettle1 names");
+		writer.write("485322d4e0f44c3d names");
 		writer.close();
 		
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: kettle1");
+		System.out.println("With body: 485322d4e0f44c3d names");
 		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
@@ -142,12 +140,12 @@ public class Client {
  
 		// body
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
-		writer.write("kettle1 name m077");
+		writer.write("485322d4e0f44c3d name d163bbdd530ec035");
 		writer.close();
 		
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: kettle1");
+		System.out.println("With body: 485322d4e0f44c3d name d163bbdd530ec035");
 		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
@@ -183,12 +181,12 @@ public class Client {
  
 		// body
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
-		writer.write("kettle1 numbers");
+		writer.write("485322d4e0f44c3d numbers");
 		writer.close();
 		
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: kettle1");
+		System.out.println("With body: 485322d4e0f44c3d numbers");
 		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
@@ -224,12 +222,12 @@ public class Client {
  
 		// body
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
-		writer.write("kettle1 number m015");
+		writer.write("485322d4e0f44c3d number 36a5c5d5cc28739a");
 		writer.close();
 		
 		int responseCode = con.getResponseCode();
 		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: kettle1");
+		System.out.println("With body: 485322d4e0f44c3d number 36a5c5d5cc28739a");
 		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
