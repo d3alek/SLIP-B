@@ -8,7 +8,7 @@
 You can only supply 1 KettleId, 1 of the 2nd parameter and N-times of the 3rd parameter
 
 -------Return message structure (data item separated by spaces):------
-(item1) (item2) (item3) ... (itemN)
+(item1), (item2), (item3), ..., (itemN)
 
 
 -----Parameters------
