@@ -97,7 +97,6 @@ int main(void)
             if (this_device_id == device_id){
                 if (packet[0] == 0xcfcf){  // Master init sequence
                     simple_uart_putstring("Got init!\n");
-                    // nrf_delay_ms(20);  // Need to wait before responding, otherwise Master misses it
                     packet[0] = 0xaf;  // Send ACK to Master
                     send_packet(1);    // ... 3 times ...
 
@@ -115,16 +114,14 @@ int main(void)
                     }
                     uart_data = simple_uart_get();
                 } else if (packet[0] == 0xabab) {  // Master poll availability
-                    simple_uart_putstring("Got avail!\n");
-                    // nrf_delay_ms(20);  // Need to wait before responding, otherwise Master misses it
+                    simple_uart_putstring("Sent availability status!\n");
                     packet[0] = availability;  // Send ACK to Master
                     send_packet(1);
                 } else if (packet[0] == 0xdede) {  // Master kettle boiling
                     simple_uart_putstring("Got invitation!\n");
-                    // nrf_delay_ms(20);  // Need to wait before responding, otherwise Master misses it
                     packet[0] = 0xaf;  // Send ACK to Master
                     send_packet(1);    // ... 3 times ...
-                    for (uint8_t i=0; i<10; i++){
+                    for (uint8_t i=0; i<100; i++){
                         nrf_gpio_pin_toggle(0);
                         nrf_delay_ms(200);
                     }

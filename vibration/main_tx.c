@@ -14,8 +14,10 @@
 #include "radio_config.h"
 #include "app_scheduler.h"
 
+#define MUG_MAX_NUM 10
+
 static uint64_t packet[PACKET_PAYLOAD_MAXSIZE];  // Packet to transmit.
-static MUG_STATUS MUG_LIST[10];
+MUG_STATUS MUG_LIST[MUG_MAX_NUM];
 
 /*
 ==============================================
@@ -140,7 +142,7 @@ bool receive_packet(uint64_t timeout){
 		if (timeout-- > 0) {
 		    nrf_delay_ms(1);
 		} else {
-		    simple_uart_putstring("Timeout!\n");
+		    // simple_uart_putstring("Timeout!\n");
 		    incoming_msg = false;
 		    break;
 		}
@@ -188,7 +190,6 @@ int main(){
 	// initialize temperature
 	nrf_temp_init();
 
-	uint64_t device_id = 0xd163bbdd530ec035;  // Chip without buttons
 
 	bool radio_executed = false;
 
@@ -200,61 +201,110 @@ int main(){
 		uart_data = simple_uart_get();
 		simple_uart_putstring("Sending!\n");
 
+		MUG_LIST[0].MUG_ID = 0xd163bbdd530ec035;
+		MUG_LIST[0].PIPELINE_STATUS = NONE;
+
 		// Check the temperature rise.
 		if (useTemperature) {
 			find_temperature(&temperatureToReach, &temperatureDifference, &currentTemperature, &hasReachedTemperature);
 		}
 
 		if ( !radio_executed ) {
+			// Deal with radios
 		    sd_softdevice_disable();
 			simple_uart_putstring("Disabled soft device\n");
 			radio_configure();
 			simple_uart_putstring("Configured radio\n");
+			// END - Deal with radios
 
-			// Discover
-			packet[0] = (uint64_t) 0xcfcf;
-			packet[1] = device_id;
+			bool disovery_complete = false;
+			bool all_final_state = true;
+			int8_t current_mug = 0;
 
-			send_packet(1);
+			while (!disovery_complete){
+				if (MUG_LIST[current_mug].MUG_ID != 0){
+					// sprintf((char*)buf, "Checking : %d %llx\n",  current_mug, MUG_LIST[current_mug].MUG_ID);
+					// simple_uart_putstring(buf);
 
-			if (receive_packet(50)){
-				if (packet[0] == 0xaf && packet[1] == device_id) {
-					simple_uart_putstring("ACKed\n");
+					// Discover
+					if (MUG_LIST[current_mug].PIPELINE_STATUS == NONE || MUG_LIST[current_mug].PIPELINE_STATUS == OFF){
+						packet[0] = (uint64_t) 0xcfcf;
+						packet[1] = MUG_LIST[current_mug].MUG_ID;
+
+						send_packet(1);
+
+						if (receive_packet(50)){
+							if (packet[0] == 0xaf && packet[1] == MUG_LIST[current_mug].MUG_ID) {
+								simple_uart_putstring("Mug is ON\n");
+								MUG_LIST[current_mug].PIPELINE_STATUS = ON;
+								all_final_state = false;
+							} else {
+								sprintf((char*)buf, "ERROR signal: %llx\n",  packet[0]);
+								simple_uart_putstring(buf);
+							}
+						} else {
+							sprintf((char*)buf, "ERROR : %llx %llx\n",  packet[0], packet[1]);
+							simple_uart_putstring(buf);
+							simple_uart_putstring("Mug is OFF\n");
+							MUG_LIST[current_mug].PIPELINE_STATUS = OFF;
+						}
+
+					}
+					// Get availability
+					else if (MUG_LIST[current_mug].PIPELINE_STATUS == ON){
+						packet[0] = (uint64_t) 0xabab;
+						packet[1] = MUG_LIST[current_mug].MUG_ID;
+
+						send_packet(1);
+
+						if (receive_packet(50)){
+							if (packet[0] == 0xaa && packet[1] == MUG_LIST[current_mug].MUG_ID) {
+								simple_uart_putstring("Mug Accepted\n");
+								MUG_LIST[current_mug].PIPELINE_STATUS = ACCEPTED;
+								all_final_state = false;
+							} else if (packet[0] == 0xff && packet[1] == MUG_LIST[current_mug].MUG_ID) {
+								simple_uart_putstring("Mug Rejected\n");
+								MUG_LIST[current_mug].PIPELINE_STATUS = REJECTED;
+							}
+						} else {
+							all_final_state = false;
+						}
+					}
+					// Vibrate when water boils
+					else if (MUG_LIST[current_mug].PIPELINE_STATUS == ACCEPTED){
+				// TODO: && temperature > threshold
+						packet[0] = (uint64_t) 0xdede;
+						packet[1] = MUG_LIST[current_mug].MUG_ID;
+
+						send_packet(1);
+
+						if (receive_packet(50)){
+							if (packet[0] == 0xaf && packet[1] == MUG_LIST[current_mug].MUG_ID) {
+								simple_uart_putstring("ACKed\n");
+								MUG_LIST[current_mug].PIPELINE_STATUS = INVITED;
+							}
+						} else {
+							all_final_state = false;
+						}
+					}
+
+					current_mug++;
+				} else {
+					if (all_final_state) {
+						// TODO: check water is boiled as well!
+						disovery_complete = true;
+						simple_uart_putstring("DISCOVERY DONE!\n");
+					} else {
+						current_mug = 0;
+						all_final_state = true;
+					}
 				}
 			}
 
-				// Remove this when loop is implemented
-				nrf_delay_ms(5000);
-
-			// Get availability
-			packet[0] = (uint64_t) 0xabab;
-			packet[1] = device_id;
-
-			send_packet(1);
-
-			if (receive_packet(50)){
-				if (packet[0] == 0xaa && packet[1] == device_id) {
-					simple_uart_putstring("Accepted\n");
-				} else if (packet[0] == 0xff && packet[1] == device_id) {
-					simple_uart_putstring("Rejected\n");
-				}
-			}
-
-			// Vibrate
-			// TODO: don't send invitation to rejected mugs
-			packet[0] = (uint64_t) 0xdede;
-			packet[1] = device_id;
-
-			send_packet(1);
-
-			if (receive_packet(50)){
-				if (packet[0] == 0xaf && packet[1] == device_id) {
-					simple_uart_putstring("ACKed\n");
-				}
-			}
-
+			// Deal with radios
 	        sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
 			simple_uart_putstring("Enabled soft device\n");
+			// END - Deal with radios
 
 			// radio_executed = true;
 		}
