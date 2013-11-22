@@ -72,9 +72,8 @@ typedef struct ble_ms_s
     ble_gatts_char_handles_t     pending_char_handles;          
     uint8_t                      uuid_type;
     uint16_t                     conn_handle;  
-    uint64_t                     pending_ids[MAX_LEN];     //List of mug Ids to be invited
-    MUG_STATUS*                   mugs;
-    uint8_t                      pending_size;             //size of pending list
+    MUG_STATUS*                  mugs;
+    uint8_t                      mug_len;             //size of pending list
     bool                         is_notifying;
     ble_ms_pending_write_handler_t  pending_write_handler;
 } ble_ms_t;

@@ -253,7 +253,7 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init, MUG_STATU
     ble_uuid_t ble_uuid;
 
     // Initialize service structure
-    p_ms->pending_size = 0;                       
+    p_ms->mug_len = 0;                       
     p_ms->conn_handle       = BLE_CONN_HANDLE_INVALID;
     p_ms->pending_write_handler = p_ms_init->pending_write_handler;
     p_ms->mugs = mugs;
@@ -349,18 +349,14 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 {
     uint32_t err_code = NRF_SUCCESS;
 
-    // Save new id set
-    // memset(p_ms->accepted_ids, 0, sizeof(p_ms->accepted_ids));
-    // memcpy(p_ms->accepted_ids, ids, sizeof(ids));
-
     //encoded string for GATT
     uint8_t encoded_ids[MAX_LEN * 16]; 
  
-    //encode the as string
+    //encode the ids and return length of encoding
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
         
-    // Update GATT daccpeted characteristic in database
+    //Update GATT accpeted characteristic in database
     err_code = sd_ble_gatts_value_set(p_ms->accepted_char_handles.value_handle,
                                           0,
                                           &len,
@@ -401,18 +397,14 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 {
     uint32_t err_code = NRF_SUCCESS;
 
-    // Save new id set
-    // memset(p_ms->declined_ids, 0, sizeof(p_ms->declined_ids));
-    // memcpy(p_ms->declined_ids, ids, sizeof(ids));
-
     //encoded string for GATT
     uint8_t encoded_ids[MAX_LEN * 16]; 
     
-    //encode the as string
+    //encode the ids and return the length of encoding
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
         
-    // Update GATT database with new declied char
+    //Update GATT database with new declied characterisic
     err_code = sd_ble_gatts_value_set(p_ms->declined_char_handles.value_handle,
                                           0,
                                           &len,
