@@ -81,6 +81,121 @@ void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
     }
 }
 
+//Adds bump chacteristic to Meeting Service
+static uint32_t bump_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_md_t cccd_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_uuid_t          ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+    
+
+    memset(&cccd_md, 0, sizeof(cccd_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+    
+    cccd_md.vloc = BLE_GATTS_VLOC_STACK;
+    
+    memset(&char_md, 0, sizeof(char_md));
+    
+    char_md.char_props.read   = 1;
+    char_md.char_props.notify = 1;
+    char_md.p_char_user_desc  = NULL;
+    char_md.p_char_pf         = NULL;
+    char_md.p_user_desc_md    = NULL;
+    char_md.p_cccd_md         = &cccd_md;
+    char_md.p_sccd_md         = NULL;
+    
+    ble_uuid.type = p_ms->uuid_type;
+    ble_uuid.uuid = MS_UUID_BUMP_CHAR;
+
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth    = 0;
+    attr_md.wr_auth    = 0;
+    attr_md.vlen       = 0;
+    
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+
+    uint8_t init_val = 0;    
+
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.init_len     = sizeof(uint8_t);
+    attr_char_value.init_offs    = 0;
+    attr_char_value.max_len      = sizeof(uint8_t);
+    attr_char_value.p_value      = &init_val;
+    
+    return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
+                                               &attr_char_value,
+                                               &p_ms->temp_char_handles);
+}
+
+//Adds temp chacteristic to Meeting Service
+static uint32_t temperature_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
+{
+    ble_gatts_char_md_t char_md;
+    ble_gatts_attr_md_t cccd_md;
+    ble_gatts_attr_t    attr_char_value;
+    ble_uuid_t          ble_uuid;
+    ble_gatts_attr_md_t attr_md;
+    
+
+    memset(&cccd_md, 0, sizeof(cccd_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
+    
+    cccd_md.vloc = BLE_GATTS_VLOC_STACK;
+    
+    memset(&char_md, 0, sizeof(char_md));
+    
+    char_md.char_props.read   = 1;
+    char_md.char_props.notify = 1;
+    char_md.p_char_user_desc  = NULL;
+    char_md.p_char_pf         = NULL;
+    char_md.p_user_desc_md    = NULL;
+    char_md.p_cccd_md         = &cccd_md;
+    char_md.p_sccd_md         = NULL;
+    
+    ble_uuid.type = p_ms->uuid_type;
+    ble_uuid.uuid = MS_UUID_BUMP_CHAR;
+
+    memset(&attr_md, 0, sizeof(attr_md));
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
+    
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
+    attr_md.rd_auth    = 0;
+    attr_md.wr_auth    = 0;
+    attr_md.vlen       = 0;
+    
+    memset(&attr_char_value, 0, sizeof(attr_char_value));
+
+
+    uint8_t init_val = 0;    
+
+    attr_char_value.p_uuid       = &ble_uuid;
+    attr_char_value.p_attr_md    = &attr_md;
+    attr_char_value.init_len     = sizeof(uint8_t);
+    attr_char_value.init_offs    = 0;
+    attr_char_value.max_len      = sizeof(uint8_t);
+    attr_char_value.p_value      = &init_val;
+    
+    return sd_ble_gatts_characteristic_add(p_ms->service_handle, &char_md,
+                                               &attr_char_value,
+                                               &p_ms->bump_char_handles);
+}
+
+
 //Adds accepted chacteristic to Meeting Service
 static uint32_t accepted_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 {
@@ -253,7 +368,8 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init, MUG_STATU
     ble_uuid_t ble_uuid;
 
     // Initialize service structure
-    p_ms->mug_len = 0;                       
+    p_ms->mug_len = 0; 
+    p_ms->ready =0;                      
     p_ms->conn_handle       = BLE_CONN_HANDLE_INVALID;
     p_ms->pending_write_handler = p_ms_init->pending_write_handler;
     p_ms->mugs = mugs;
@@ -390,7 +506,6 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 
     return err_code;
 }
-
 
 //updates the declined chracteristic in GATT and notifies the client
 uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len)

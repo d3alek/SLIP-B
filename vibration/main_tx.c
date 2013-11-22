@@ -172,14 +172,18 @@ int main(){
 	uint8_t uart_data;
 	char* buf[32];
 
+    radio_configure();		
+    simple_uart_putstring("Configured radio\n");
+
+
 	start_ble(MUG_LIST);
 	simple_uart_putstring("Bluetooth init\n");
 
 	twi_master_init();
 	simple_uart_putstring("TWI master init\n");
 
-	// init_vibration();
-	// simple_uart_putstring("Vibration init\n");
+	 init_vibration();
+	 simple_uart_putstring("Vibration init\n");
 
 	// temperature variables
 	uint8_t temperatureToReach = 0;
@@ -196,35 +200,36 @@ int main(){
 	// main application loop
 	while (1) {
 		// Block execution until you get Serial (2 bytes including \n)
-		simple_uart_putstring("Ready to send!\n");
-		uart_data = simple_uart_get();
-		uart_data = simple_uart_get();
-		simple_uart_putstring("Sending!\n");
+		// simple_uart_putstring("Ready to send!\n");
+		// uart_data = simple_uart_get();
+		// uart_data = simple_uart_get();
+		// simple_uart_putstring("Sending!\n");
 
-		MUG_LIST[0].MUG_ID = 0xd163bbdd530ec035;
-		MUG_LIST[0].PIPELINE_STATUS = NONE;
+		// MUG_LIST[0].MUG_ID = 0xd163bbdd530ec035;
+		 //MUG_LIST[0].PIPELINE_STATUS = NONE;
 
-		// Check the temperature rise.
-		if (useTemperature) {
-			find_temperature(&temperatureToReach, &temperatureDifference, &currentTemperature, &hasReachedTemperature);
-		}
-
-		if ( !radio_executed ) {
+		 //Check the temperature rise.
+		 if (useTemperature) {
+		 	find_temperature(&temperatureToReach, &temperatureDifference, &currentTemperature, &hasReachedTemperature);
+		 }
+         //All the mugs that will be invited have been set 
+		 if (is_ready() && !radio_executed) {
 			// Deal with radios
 		    sd_softdevice_disable();
+			radio_configure();		
+           // simple_uart_putstring("Configured radio\n");
 			simple_uart_putstring("Disabled soft device\n");
-			radio_configure();
-			simple_uart_putstring("Configured radio\n");
+			
 			// END - Deal with radios
 
 			bool disovery_complete = false;
 			bool all_final_state = true;
 			int8_t current_mug = 0;
 
-			while (!disovery_complete){
-				if (MUG_LIST[current_mug].MUG_ID != 0){
-					// sprintf((char*)buf, "Checking : %d %llx\n",  current_mug, MUG_LIST[current_mug].MUG_ID);
-					// simple_uart_putstring(buf);
+		 	while (!disovery_complete){
+		 		if (MUG_LIST[current_mug].MUG_ID != 0){
+		 			// sprintf((char*)buf, "Checking : %d %llx\n",  current_mug, MUG_LIST[current_mug].MUG_ID);
+		 			// simple_uart_putstring(buf);
 
 					// Discover
 					if (MUG_LIST[current_mug].PIPELINE_STATUS == NONE || MUG_LIST[current_mug].PIPELINE_STATUS == OFF){
@@ -235,7 +240,9 @@ int main(){
 
 						if (receive_packet(50)){
 							if (packet[0] == 0xaf && packet[1] == MUG_LIST[current_mug].MUG_ID) {
-								simple_uart_putstring("Mug is ON\n");
+								sprintf((char*)buf, "MUG %llx is On\n", MUG_LIST[current_mug].MUG_ID);
+							    simple_uart_putstring(buf);
+								//simple_uart_putstring("Mug is ON\n");
 								MUG_LIST[current_mug].PIPELINE_STATUS = ON;
 								all_final_state = false;
 							} else {
@@ -255,7 +262,7 @@ int main(){
 						packet[0] = (uint64_t) 0xabab;
 						packet[1] = MUG_LIST[current_mug].MUG_ID;
 
-						send_packet(1);
+		 				send_packet(1);
 
 						if (receive_packet(50)){
 							if (packet[0] == 0xaa && packet[1] == MUG_LIST[current_mug].MUG_ID) {
@@ -301,15 +308,19 @@ int main(){
 				}
 			}
 
-			// Deal with radios
-	        sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
-			simple_uart_putstring("Enabled soft device\n");
+		 	// Deal with radios
+	         sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
+	       	 simple_uart_putstring("Enabled soft device\n");
 			// END - Deal with radios
 
-			// radio_executed = true;
-		}
+			 radio_executed = true;
+			 RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
+
+		}								
 		//debug_ble_ids();
 		// vibration_update();
 		app_sched_execute();
+		nrf_delay_ms(500);
+
 	}
 }

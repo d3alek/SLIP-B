@@ -28,7 +28,9 @@
 //ble_ms_t*  start_ble();
 //int64_t* get_pending_mugs();
 void power_manage(void);
-int is_connected();
+int is_ready();
 void debug_ble_ids();
+void ble_update_temp(uint8_t* val);
+void ble_update_bump(uint8_t* val);
 
 #endif // __BLE_H

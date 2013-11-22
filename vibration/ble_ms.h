@@ -47,6 +47,10 @@
 #define MS_UUID_DECLINED_CHAR 0x1525 //UUID of Declined characteristic
 #define MS_UUID_PENDING_CHAR 0x1526  //UUID of Pending characteristic
 
+#define MS_UUID_TEMP_CHAR 0x1527  //UUID of Temperature characteristic
+#define MS_UUID_BUMP_CHAR 0x1528  //UUID of Bump characteristic
+
+
 #define MAX_LEN 10
 
 // Forward declaration of the ble_ms_t type. 
@@ -69,12 +73,16 @@ typedef struct ble_ms_s
     uint16_t                     service_handle;                   
     ble_gatts_char_handles_t     accepted_char_handles;
     ble_gatts_char_handles_t     declined_char_handles;     
-    ble_gatts_char_handles_t     pending_char_handles;          
+    ble_gatts_char_handles_t     pending_char_handles;   
+    ble_gatts_char_handles_t     temp_char_handles;          
+    ble_gatts_char_handles_t     bump_char_handles;     
+
     uint8_t                      uuid_type;
     uint16_t                     conn_handle;  
     MUG_STATUS*                  mugs;
     uint8_t                      mug_len;             //size of pending list
     bool                         is_notifying;
+    bool                         ready;
     ble_ms_pending_write_handler_t  pending_write_handler;
 } ble_ms_t;
 

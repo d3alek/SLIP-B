@@ -194,25 +194,29 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
     unsigned char buf[32];
    
     mug_id = id_decode(data); //Decodes the written data 
+    sprintf((char*)buf, "BLE WRITE %llX\n",mug_id);
+    simple_uart_putstring(buf);
+    //Reset list of mug ids that need to be 
+    if(mug_id == 0x1111111111111111){
 
-    //Reset list of mug ids that need to be invited if 255 is recieved 
-    if(mug_id == 0xFF){
-
-       memset(p_ms->mugs, 0, sizeof(p_ms->mugs)); //reset all mug ids to zero
-       simple_uart_putstring("PENDING RESET\n");
-
+      //CALL RADIO INVITE
+       //memset(p_ms->mugs, 0, sizeof(p_ms->mugs)); //reset all mug ids to zero
+       //simple_uart_putstring("PENDING RESET\n");
+        p_ms->ready = 1;
 
     }
     //otherwise update pending list with new mug ID
     else{
+        if( p_ms->mug_len == 0){
+            p_ms->ready=1;
+        }
+        
         //checks if mug id has already been seen
         if(!check_duplicate(p_ms,mug_id)){
            p_ms->mugs[p_ms->mug_len].MUG_ID = mug_id;           //set mug id in struct
            p_ms->mugs[p_ms->mug_len].PIPELINE_STATUS = NONE;    //init pipeline status
            p_ms->mug_len = p_ms->mug_len + 1;    //increment number of mugs in struct
 
-          sprintf((char*)buf, "BLE WRITE %llX\n",mug_id);
-          simple_uart_putstring(buf);
        }
        else{
          sprintf((char*)buf, "DUPPLICATE MUG ID %llX\n",mug_id);
@@ -537,8 +541,14 @@ static void buttons_init(void)
 
 
 //Returns true if device is connected
-int is_connected(){
-  return conn;
+int is_ready(){
+  if (conn && m_ms.ready){
+      return true;
+      simple_uart_putstring("aye\n");
+
+  }    
+
+  return false;
 }
 
 
@@ -547,10 +557,10 @@ void debug_ble_ids(){
   int i;
   unsigned char buf[32];
 
-  for(i=0;i< m_ms.mug_len; i++){
-     sprintf((char*)buf, "MUG ID %d of %d: %llX\n",i,m_ms.mug_len,m_ms.mugs[i].MUG_ID);
+  //for(i=0;i< m_ms.mug_len; i++){
+     sprintf((char*)buf, "MUG size %d\n",m_ms.mug_len);
      simple_uart_putstring(buf);
-  }
+  //}
 
 }
 
@@ -579,6 +589,103 @@ void start_ble(MUG_STATUS* mug_list)
     advertising_start();
 
 }
+
+//updates the temperature chracteristic in GATT and notifies the client
+void ble_update_temp(uint8_t* val)
+{
+    uint32_t err_code = NRF_SUCCESS;
+    
+    uint16_t len = 1;
+   
+        
+    //Update GATT database with new declied characterisic
+    err_code = sd_ble_gatts_value_set(m_ms.temp_char_handles.value_handle,
+                                          0,
+                                          &len,
+                                          val);
+    
+        
+    APP_ERROR_CHECK(err_code);
+
+    // Send updated value notification to android app
+    ble_gatts_hvx_params_t hvx_params;
+    uint16_t               hvx_len;
+    hvx_len = len;
+            
+    memset(&hvx_params, 0, sizeof(hvx_params));
+            
+    hvx_params.handle   = m_ms.temp_char_handles.value_handle;
+    hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
+    hvx_params.offset   = 0;
+    hvx_params.p_len    = &hvx_len;
+    hvx_params.p_data   = val;
+            
+    err_code = sd_ble_gatts_hvx(m_ms.conn_handle, &hvx_params);
+
+    if ((err_code == NRF_SUCCESS) && (hvx_len != len))
+        {
+            err_code = NRF_ERROR_DATA_SIZE;
+        }
+
+  
+    if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        char buf[30];
+        sprintf((char*)buf, "Temp update ERR %lX\n",err_code);
+        simple_uart_putstring(buf);
+        APP_ERROR_CHECK(err_code);
+     }
+}
+
+
+
+
+//updates the bump chracteristic in GATT and notifies the client
+void ble_update_bump(uint8_t* val)
+{
+    uint32_t err_code = NRF_SUCCESS;
+    
+    uint16_t len = 1;
+   
+        
+    //Update GATT database with new declied characterisic
+    err_code = sd_ble_gatts_value_set(m_ms.bump_char_handles.value_handle,
+                                          0,
+                                          &len,
+                                          val);
+    
+        
+    APP_ERROR_CHECK(err_code);
+
+    // Send updated value notification to android app
+    ble_gatts_hvx_params_t hvx_params;
+    uint16_t               hvx_len;
+    hvx_len = len;
+            
+    memset(&hvx_params, 0, sizeof(hvx_params));
+            
+    hvx_params.handle   = m_ms.bump_char_handles.value_handle;
+    hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
+    hvx_params.offset   = 0;
+    hvx_params.p_len    = &hvx_len;
+    hvx_params.p_data   = val;
+            
+    err_code = sd_ble_gatts_hvx(m_ms.conn_handle, &hvx_params);
+
+    if ((err_code == NRF_SUCCESS) && (hvx_len != len))
+        {
+            err_code = NRF_ERROR_DATA_SIZE;
+        }
+
+  
+    if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        char buf[30];
+        sprintf((char*)buf, "Bump update ERR %lX\n",err_code);
+        simple_uart_putstring(buf);
+        APP_ERROR_CHECK(err_code);
+     }
+}
+
+
 
 //Sends accpeted and rejected mug ids to the app
 void RSVP_App(){
@@ -627,6 +734,6 @@ void RSVP_App(){
         APP_ERROR_CHECK(err_code);
   }
 
-  simple_uart_putstring("SENT REPLIES\n");
+  simple_uart_putstring("SENT RSVP\n");
  
 }
