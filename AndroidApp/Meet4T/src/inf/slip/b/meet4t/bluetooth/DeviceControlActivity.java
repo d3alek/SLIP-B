@@ -456,10 +456,8 @@ public class DeviceControlActivity extends Activity {
 		if(nextMug != null) {
 			nextMug = nextMug + "0000000000000000".substring(nextMug.length());
 			c.setValue(nextMug);
-//			notify(c);
     		Log.d("Cat", "String value before writing:  " + c.getStringValue(0));
     		mBluetoothLeService.write(c, nextMug);
-    		// Setting notification
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
@@ -468,17 +466,6 @@ public class DeviceControlActivity extends Activity {
 
     private void notify(BluetoothGattCharacteristic c) {
     	final int charaProp = c.getProperties();
-//    	if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-//    		// If there is an active notification on a characteristic, clear
-//    		// it first so it doesn't update the data field on the user interface.
-//    		if (mNotifyCharacteristic != null && 
-//    				!mNotifyCharacteristic.getUuid().equals(c.getUuid())) {
-//    			mBluetoothLeService.setCharacteristicNotification(
-//    					mNotifyCharacteristic, false);
-//    			mNotifyCharacteristic = null;
-//    		}
-//    		mBluetoothLeService.readCharacteristic(c);
-//    	}
     	if  ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
           mNotifyCharacteristic = c;
           mBluetoothLeService.setCharacteristicNotification(c, true);

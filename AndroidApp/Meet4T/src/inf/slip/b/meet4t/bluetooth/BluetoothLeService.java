@@ -135,7 +135,7 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-        	Log.i("Cat", "onCharacteristicChanged");
+        	Log.i("Cat", "onCharacteristicChanged: " + characteristic.getUuid());
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
