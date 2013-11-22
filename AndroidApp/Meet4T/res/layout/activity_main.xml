@@ -13,29 +13,41 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/hello_world" />
-     <Button
-     android:id="@+id/enable_button"
-     android:layout_height="wrap_content"
-     android:layout_width="wrap_content"
-     android:layout_below="@id/hello"
-     android:text="@string/enable_bluetooth" />
-     <Button
-     android:id="@+id/disable_button"
-     android:layout_height="wrap_content"
-     android:layout_width="wrap_content"
-     android:layout_below="@id/enable_button"
-     android:text="@string/disable_bluetooth" />
-     <Button
-     android:id="@+id/search_devices_button"
-     android:layout_height="wrap_content"
-     android:layout_width="wrap_content"
-     android:layout_below="@id/disable_button"
-     android:text="@string/search_devices" />
-     <Button
-     android:id="@+id/invite_people_button"
-     android:layout_height="wrap_content"
-     android:layout_width="wrap_content"
-     android:layout_below="@id/search_devices_button"
-     android:text="@string/invite_people" />
+
+    <Button
+        android:id="@+id/enable_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/hello"
+        android:text="@string/enable_bluetooth" />
+
+    <Button
+        android:id="@+id/disable_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/enable_button"
+        android:text="@string/disable_bluetooth" />
+
+    <Button
+        android:id="@+id/search_devices_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/disable_button"
+        android:text="@string/search_devices" />
+
+    <Button
+        android:id="@+id/invite_people_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/search_devices_button"
+        android:text="@string/invite_people" />
+    
+    <Button
+        android:id="@+id/bump_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/invite_people_button"
+        android:text="@string/bump_file"
+        />
 
 </RelativeLayout>
