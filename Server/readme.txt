@@ -8,7 +8,7 @@
 You can only supply 1 KettleId, 1 of the 2nd parameter and N-times of the 3rd parameter
 
 -------Return message structure (data item separated by spaces):------
-(item1) (item2) (item3) ... (itemN)
+(item1), (item2), (item3), ..., (itemN)
 
 
 -----Parameters------
@@ -34,12 +34,20 @@ You can give as many as you please.
 (Omit the starting "--" at the beginning of each example)
 
 Get all the cup ids:
--- kettle1
+-- kettle2
 OR
--- kettle1 cups
+-- kettle2 cups
 
 Get all the numbers
--- kettle1 numbers
+-- kettle2 numbers
 
 Get specific name
--- kettle1 name m007
+-- kettle2 name d163bbdd530ec035
+
+------Ids---------
+
+Kettle Ids: 485322d4e0f44c3d kettle2 kettle3 kettle4 kettle5
+Cup Ids: d163bbdd530ec035 36a5c5d5cc28739a e164bcde513cf831 aj385763j1rl389l 3jd2j685kld930s1
+Names: alek catalina ewan georgi markus
+
+Only the 1st kettle id and the first 2 cup ids are actual devices.
