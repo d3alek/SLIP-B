@@ -107,15 +107,29 @@ public class BluetoothLeService extends Service {
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
             	Log.i("Cat", "onCharacteristicRead");
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+//                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
         }
         
         @Override
-        public void onCharacteristicWrite(BluetoothGatt p1, BluetoothGattCharacteristic p2, int p3) {
-        	super.onCharacteristicWrite(p1, p2, p3);
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         	Log.i("Cat", "onCharacteristicWrite");
-        	onCharacteristicChanged(p1, p2);
+        	Log.d("Cat", "status: " + status);
+        	if (status == BluetoothGatt.GATT_SUCCESS) {
+        		broadcastUpdate("WRITE_SUCCESS", characteristic);
+        		Log.i("Cat", "SUCCESS");
+        	} else {
+        		broadcastUpdate("WRITE_SUCCESS", characteristic);
+        		Log.i("Cat", "NOT SUCCESS");
+        	}
+        }
+        
+        private String bytArrayToHex(byte[] array) {
+        	StringBuilder sb = new StringBuilder();
+        	for (byte b : array) {
+        		sb.append(String.format("%02x", b&0xff));
+        	}
+        	return sb.toString();
         }
 
         @Override
@@ -194,6 +208,8 @@ public class BluetoothLeService extends Service {
     }
 
     private final IBinder mBinder = new LocalBinder();
+
+	private String tryingToWrite;
 
     /**
      * Initializes a reference to the local Bluetooth adapter.
@@ -361,10 +377,15 @@ public class BluetoothLeService extends Service {
     	return null;
     }
     
-    public void write(BluetoothGattCharacteristic c) {
+    public void write(BluetoothGattCharacteristic c, String toWrite) {
+//    	mBluetoothGatt.beginReliableWrite();
+    	tryingToWrite = toWrite;
+    	c.setValue(toWrite);
     	Log.d("Cat", "writing the characteristic");
-    	mBluetoothGatt.writeCharacteristic(c);
-    	Log.d("Cat", "YaY!!!!");
-    	
+    	if (mBluetoothGatt.writeCharacteristic(c)) {
+        	Log.d("Cat", "Writing initiated successfully.");
+    	} else {
+        	Log.d("Cat", "Writing NOT successful.");
+    	}    	
     }
 }
