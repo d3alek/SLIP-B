@@ -22,7 +22,7 @@
 
 #define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                            /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "NOT SLIP B"                           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "SLIP B"                           /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -57,8 +57,7 @@
 
 static ble_gap_sec_params_t             m_sec_params;                               /**< Security requirements for this application. */
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
-static ble_ms_t                         m_ms;
-
+static ble_ms_t                         m_ms;                                       /**< Stucture holding BLE data,defined in ble_ms.h*/
 
 int conn;
 #define SCHED_MAX_EVENT_DATA_SIZE       sizeof(app_timer_event_t)                   /**< Maximum size of scheduler events. Note that scheduler BLE stack events do not contain any data, as the events are being pulled from the stack in the event handler. */
@@ -163,41 +162,67 @@ static void advertising_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+//checks if id is already present in mugs struct
+static bool check_duplicate(ble_ms_t * p_ms, uint64_t id){
+  
+   int i;
+
+   for(i=0;i<p_ms->mug_len;i++){
+      if(p_ms->mugs[i].MUG_ID == id){
+         return true;
+      }
+
+   }
+   return false;
+
+}
+
+
 
 /**@brief Function for handling a write to the Pending characteristic of the Meeting service.
  * @detail A pointer to this function is passed to the service in its init structure.
+ *           
+ *        Called on a write event to the pending charcteristic, which is defined in ble_ms.c
  */
 
+//called on pending write event defined in ble_ms.c
 static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
 {
 
-
     uint32_t      err_code;
-    uint64_t      rec_id;
-
+    uint64_t      mug_id;  //recived Mug ID 
     unsigned char buf[32];
    
-    rec_id = id_decode(data);
+    mug_id = id_decode(data); //Decodes the written data 
 
-    //255
-    if(rec_id == 0xFF){
-       //init pending set to zero
-       p_ms->pending_size = 0;
-       memset(p_ms->pending_ids, 0, sizeof(p_ms->pending_ids));
+    //Reset list of mug ids that need to be invited if 255 is recieved 
+    if(mug_id == 0xFF){
+
+       memset(p_ms->mugs, 0, sizeof(p_ms->mugs)); //reset all mug ids to zero
        simple_uart_putstring("PENDING RESET\n");
 
-    }
-    else{
-      //update pending list to written data
-      p_ms->pending_ids[p_ms->pending_size] =  rec_id;
-      p_ms->pending_size = p_ms->pending_size + 1;
 
-      sprintf((char*)buf, "BLE WRITE %llX\n",rec_id);
-      simple_uart_putstring(buf);
+    }
+    //otherwise update pending list with new mug ID
+    else{
+        //checks if mug id has already been seen
+        if(!check_duplicate(p_ms,mug_id)){
+           p_ms->mugs[p_ms->mug_len].MUG_ID = mug_id;           //set mug id in struct
+           p_ms->mugs[p_ms->mug_len].PIPELINE_STATUS = NONE;    //init pipeline status
+           p_ms->mug_len = p_ms->mug_len + 1;    //increment number of mugs in struct
+
+          sprintf((char*)buf, "BLE WRITE %llX\n",mug_id);
+          simple_uart_putstring(buf);
+       }
+       else{
+         sprintf((char*)buf, "DUPPLICATE MUG ID %llX\n",mug_id);
+         simple_uart_putstring(buf);
+       }
 
      }
 
-     //update database
+     //Update GATTS pending characteristics to zero so that the android app 
+     //knows that we have recieved the mug ID 
      uint16_t zlen = sizeof(uint8_t);
      uint8_t zero = 0;
      err_code = sd_ble_gatts_value_set(p_ms->pending_char_handles.value_handle,
@@ -207,26 +232,23 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
      APP_ERROR_CHECK(err_code);
 
 
-     // Send updated value to client
+     //Send notification to andriod app that the chracteristic has changed
      ble_gatts_hvx_params_t hvx_params;
      uint16_t               hvx_len;
      hvx_len = zlen;
-         
-       
+                
      memset(&hvx_params, 0, sizeof(hvx_params));
 
-         
      hvx_params.handle   = p_ms->pending_char_handles.value_handle;
      hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
      hvx_params.offset   = 0;
      hvx_params.p_len    = &hvx_len;
      hvx_params.p_data   = &zero;
 
-     //sd_ble_gatts_sys_attr_set(p_ms->conn_handle, NULL, 0);
      err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
 
      if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
-        sprintf((char*)buf, "Pending write ERR %X\n",err_code);
+        sprintf((char*)buf, "Pending write ERR %lX\n",err_code);
         simple_uart_putstring(buf);
         APP_ERROR_CHECK(err_code);
      }
@@ -237,14 +259,14 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
 
 /**@brief Function for initializing services that will be used by the application.
  */
-static void services_init(void)
+static void services_init(MUG_STATUS* mugs)
 {
     uint32_t err_code;
     ble_ms_init_t init;
 
     init.pending_write_handler = pending_write_handler;
 
-    err_code = ble_ms_init(&m_ms, &init);
+    err_code = ble_ms_init(&m_ms, &init, mugs);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -339,7 +361,42 @@ static void advertising_start(void)
     nrf_gpio_pin_set(ADVERTISING_LED_PIN_NO);
 }
 
+//==================================================================
+//Dummy function for debugging accepted and declined Characteristics
+//==================================================================
+static void set_replies(){
+  int acc_size = 3;
+  int dec_size = 2;
+  uint32_t err_code = NRF_SUCCESS;
+  
+  uint64_t acc_id1 = 0x5b83092c6767bb6d;
+  uint64_t acc_id2 = 0xc5861596e2118c8d;
+  uint64_t acc_id3 = 0x32db4358f348ea3b;
+  uint64_t acc_ids[acc_size];
+  acc_ids[0] = acc_id1;
+  acc_ids[1] = acc_id2; 
+  acc_ids[2] = acc_id3;
 
+  err_code = ble_ms_accepted_ids_update(&m_ms,acc_ids,acc_size);
+  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        APP_ERROR_CHECK(err_code);
+  }
+
+  uint64_t dec_id1 = 0x21de1a2c34a9b06f;
+  uint64_t dec_id2 = 0x30b315ab1ce4ea38;
+  uint64_t dec_ids[dec_size];
+  dec_ids[0] = dec_id1;
+  dec_ids[1] = dec_id2; 
+
+  err_code = ble_ms_declined_ids_update(&m_ms,dec_ids,dec_size);
+
+  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        APP_ERROR_CHECK(err_code);
+  }
+
+  simple_uart_putstring("SET REPLIES\n");
+
+}
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -358,7 +415,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             conn = 1;
             err_code = app_button_enable();
-
+            set_replies();                   //DEBUG FUNCTION SHOULD BE REMOVED
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
@@ -409,6 +466,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
                 err_code = sd_power_system_off();
             }
             break;
+            
 
         default:
             break;
@@ -478,57 +536,97 @@ static void buttons_init(void)
 }
 
 
-/**@brief Function for entering sleep.
- */
-void power_manage(void)
-{
-    uint32_t err_code = sd_app_event_wait();
-    APP_ERROR_CHECK(err_code);
-}
-
-
+//Returns true if device is connected
 int is_connected(){
   return conn;
 }
 
 
-
+//function for debugging the mug id structure
 void debug_ble_ids(){
   int i;
   unsigned char buf[32];
 
-  for(i=0;i< m_ms.pending_size; i++){
-    sprintf((char*)buf, "MUG ID %d: %llX\n",i,m_ms.pending_ids[i]);
-    simple_uart_putstring(buf);
-     
+  for(i=0;i< m_ms.mug_len; i++){
+     sprintf((char*)buf, "MUG ID %d of %d: %llX\n",i,m_ms.mug_len,m_ms.mugs[i].MUG_ID);
+     simple_uart_putstring(buf);
   }
 
 }
 
-/**@brief Function for application main entry.
+
+
+/**@brief Function for initialising ble
  */
-ble_ms_t* start_ble(void)
+void start_ble(MUG_STATUS* mug_list)
 {
-    // Initialize
-    conn = 0;
-    leds_init();
+    
+
+    conn = 0;                //is connected set to false
+    leds_init();                  
     timers_init();
     gpiote_init();
     buttons_init();
     ble_stack_init();
     scheduler_init();
     gap_params_init();
-    services_init();
+    services_init(mug_list);    
     advertising_init();
     conn_params_init();
     sec_params_init();
 
-    // Start execution
+    // Start advertising
     advertising_start();
 
-    return(&m_ms);
 }
 
-/**
- * @}
- */
+//Sends accpeted and rejected mug ids to the app
+void RSVP_App(){
+
+  uint32_t err_code = NRF_SUCCESS;
+  int i;
+  int acc_size =0;
+  int dec_size =0;
+
+  //finds the number of accpeted and declined mugs
+  for(i=0;i<m_ms.mug_len;i++){
+      if(m_ms.mugs[i].PIPELINE_STATUS == REJECTED){
+            dec_size++;
+      }
+      else if(m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED){
+            acc_size++;
+      }
+  }
+
+  uint64_t acc_ids[acc_size];
+  uint64_t dec_ids[dec_size];
+  int a =0;
+  int d =0;
+
+  //populates lists of accepted and declined mugs
+  for(i=0;i<m_ms.mug_len;i++){
+      if(m_ms.mugs[i].PIPELINE_STATUS == REJECTED){
+            dec_ids[d] = m_ms.mugs[i].MUG_ID;
+            d++;
+      }
+      else if(m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED){
+            acc_ids[a] = m_ms.mugs[i].MUG_ID;
+            a++;
+      }
+  }
+
+  //Updates GATSS informaton for accpeted ids
+  err_code = ble_ms_accepted_ids_update(&m_ms,acc_ids,acc_size);
+  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        APP_ERROR_CHECK(err_code);
+  }
+
+  //Updates GATSS informaton for declined ids
+  err_code = ble_ms_declined_ids_update(&m_ms,dec_ids,dec_size);
+  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+        APP_ERROR_CHECK(err_code);
+  }
+
+  simple_uart_putstring("SENT REPLIES\n");
+ 
+}

@@ -53,7 +53,7 @@ static void on_write(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
    if ((p_evt_write->handle == p_ms->pending_char_handles.value_handle) &&
        (p_ms->pending_write_handler != NULL))
    {
-       // simple_uart_putstring("pending write\n");
+       //calls pending_write_handler in slip_ble.c
        p_ms->pending_write_handler(p_ms, p_evt_write->data);
    }
 }
@@ -210,7 +210,7 @@ static uint32_t pending_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_ini
     
     char_md.char_props.read   = 1;
     char_md.char_props.notify = 1;
-    char_md.char_props.write  = 1;
+    char_md.char_props.write  = 1;         //Adds write attribute
     char_md.char_props.write_wo_resp  = 1;
     char_md.p_char_user_desc  = NULL;
     char_md.p_char_pf         = NULL;
@@ -246,18 +246,19 @@ static uint32_t pending_char_add(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_ini
 }
 
 
-
-uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
+//Initialises the ble meeting service structure
+uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init, MUG_STATUS* mugs)
 {
     uint32_t   err_code;
     ble_uuid_t ble_uuid;
 
     // Initialize service structure
-    p_ms->pending_size = 0;
+    p_ms->mug_len = 0;                       
     p_ms->conn_handle       = BLE_CONN_HANDLE_INVALID;
     p_ms->pending_write_handler = p_ms_init->pending_write_handler;
+    p_ms->mugs = mugs;
     
-    // Add base UUID to softdevice's internal list. 
+    // Add meeting service base UUID to softdevice's internal list. 
     ble_uuid128_t base_uuid = {MS_UUID_BASE};
     err_code = sd_ble_uuid_vs_add(&base_uuid, &p_ms->uuid_type);
     if (err_code != NRF_SUCCESS)
@@ -274,19 +275,21 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
         return err_code;
     }
     
-   
+   //initalises the accepted characteristic
    err_code  = accepted_char_add(p_ms, p_ms_init);
     if (err_code != NRF_SUCCESS)
     {
         return err_code;
     }
 
+    //initalises the declined characteristic
     err_code  = declined_char_add(p_ms, p_ms_init);
     if (err_code != NRF_SUCCESS)
     {
         return err_code;
     }
 
+    //initalises the pending characteristic
     err_code  = pending_char_add(p_ms, p_ms_init);
     if (err_code != NRF_SUCCESS)
     {
@@ -297,23 +300,23 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init)
 }
 
 
-//Changes the uint8_t recieved data into a uint64_t ids
+//Decodes the uint8_t[] recieved data into a uint64_t ids
 uint64_t id_decode(uint8_t* encoded_ids)
 { 
 
-    uint64_t decoded_id = 0;
+    uint64_t decoded_id = 0;  //decoded unsigned 64bit in to return
     char buf[36];
     uint8_t ids;
     
-
     int i=0;
-    while(encoded_ids[i] != '\0'){
+    //data is sent as a string, so loop over each char till end
+    while(encoded_ids[i] != '\0'){        
 
      sprintf((char*)buf, "%c",encoded_ids[i]);
-     ids = strtol(buf,NULL,16);
-     decoded_id = (decoded_id * 16) + ids; 
+     ids = strtol(buf,NULL,16);                 //convert char to hex digit
+     decoded_id = (decoded_id * 16) + ids;      //add digit to existing values
 
-      i = i+1;
+      i = i+1;  //inc loop
     }
 
    
@@ -322,26 +325,21 @@ uint64_t id_decode(uint8_t* encoded_ids)
 
 
 
-//splits each uint64_t id into 8 uint8_t data items so it can by sent by GATT 
+//splits each uint64_t id into 16 uint8_t data items chars so it can by sent by GATT 
 static uint8_t id_encode(uint64_t* ids, uint8_t num_ids, uint8_t * encoded_buffer)
 {  
-    uint8_t len = 0;
-    int i,u;
-    char buf[30];
-    char tmp[2];
 
-    // Encode id measurement
-    for(i=0;i< num_ids; i++){
-        sprintf((char*)buf,"%llX",ids[i]);
-        for(u=0;u<16;u++){
-            memcpy(tmp,(buf+u),1);
-            encoded_buffer[len] = strtol(strcat(tmp,"\0"),NULL,16);
-            sprintf((char*)buf, "BLE Encode %X,%c\n",encoded_buffer[len],buf[u]);
-            simple_uart_putstring(buf);
-            len = len+1;
-         }
+    uint8_t len =0;  //length of encoded buffer
+    int i,j;
+    for(i=0;i< num_ids; i++){ //loops over each 64 bit ID 
+      for(j=7;j>0;j--){       //loops over each 8 bit in the encoded buffer
+       encoded_buffer[(i*8)+j] = (uint8_t) ((ids[i] & (((uint64_t)0xFF)<< j*8)) >> (j*8));
+       len++;
+      }
+   
+     
     }
-  
+
     return len;  
 }
 
@@ -351,17 +349,14 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 {
     uint32_t err_code = NRF_SUCCESS;
 
-    // Save new id set
-    memset(p_ms->accepted_ids, 0, sizeof(p_ms->accepted_ids));
-    memcpy(p_ms->accepted_ids, ids, sizeof(ids));
-
-    //encoded for GATT
+    //encoded string for GATT
     uint8_t encoded_ids[MAX_LEN * 16]; 
  
+    //encode the ids and return length of encoding
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
         
-    // Update GATT database
+    //Update GATT accpeted characteristic in database
     err_code = sd_ble_gatts_value_set(p_ms->accepted_char_handles.value_handle,
                                           0,
                                           &len,
@@ -372,7 +367,7 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
         }
         
 
-    // Send updated value to client
+    // Send updated value notification to andriod app
     ble_gatts_hvx_params_t hvx_params;
     uint16_t               hvx_len;
     hvx_len = encode_len;
@@ -402,17 +397,14 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 {
     uint32_t err_code = NRF_SUCCESS;
 
-    // Save new id set
-    memset(p_ms->declined_ids, 0, sizeof(p_ms->declined_ids));
-    memcpy(p_ms->declined_ids, ids, sizeof(ids));
-
-    //encoded for GATT
+    //encoded string for GATT
     uint8_t encoded_ids[MAX_LEN * 16]; 
- 
+    
+    //encode the ids and return the length of encoding
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
         
-    // Update GATT database
+    //Update GATT database with new declied characterisic
     err_code = sd_ble_gatts_value_set(p_ms->declined_char_handles.value_handle,
                                           0,
                                           &len,
@@ -423,7 +415,7 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
         }
         
 
-    // Send updated value to client
+    // Send updated value notification to android app
     ble_gatts_hvx_params_t hvx_params;
     uint16_t               hvx_len;
     hvx_len = encode_len;

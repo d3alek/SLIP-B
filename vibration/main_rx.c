@@ -9,6 +9,11 @@
 
 static uint64_t volatile packet[PACKET_PAYLOAD_MAXSIZE];  /**< Received packet buffer. */
 
+void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
+{
+    NVIC_SystemReset();
+}
+
 void send_packet(uint8_t rep)
 {
     // Set payload pointer.

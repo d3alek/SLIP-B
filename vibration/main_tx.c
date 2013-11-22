@@ -172,7 +172,7 @@ int main(){
 	uint8_t uart_data;
 	char* buf[32];
 
-	start_ble();
+	start_ble(MUG_LIST);
 	simple_uart_putstring("Bluetooth init\n");
 
 	twi_master_init();
@@ -308,6 +308,7 @@ int main(){
 
 			// radio_executed = true;
 		}
+		//debug_ble_ids();
 		// vibration_update();
 		app_sched_execute();
 	}
