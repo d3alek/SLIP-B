@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,6 +24,8 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 
 public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
+
+	private static final String NAME_SEPARATOR = ", ";
 
 	/** The inflator used to inflate the XML layout */
 	private LayoutInflater inflator;
@@ -89,31 +92,55 @@ public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
 	
 	private List<String> getPeople() {
 		URL url;
-		String str = null;
+		String received = null;
+		String toSend = "kettle1 names";
 		try {
-			url = new URL("http://creepyweegirl.appspot.com/forSLIP");
+			url = new URL("http://54.201.81.197:8080/test");
+			// Getting names
 			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+			urlConnection.setDoOutput(true);
+			urlConnection.getOutputStream().write(toSend.getBytes());
+			// REading response
 			InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-			str = IOUtils.toString(in, "UTF-8");
+			received = IOUtils.toString(in, "UTF-8");
+			Log.i("Cat", "From server: " + received);
 			urlConnection.disconnect();
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		if (str == null) {
+		if (received == null) {
 			return new ArrayList<String>();
 		}
-		return Arrays.asList(str.split("\n"));
+		return Arrays.asList(received.split(NAME_SEPARATOR));
 	}
 	
-	public List<String> getMugIdsOfSelectedPeople() {
-		List<String> invitees = new ArrayList<String>();
+	public String getMugIdsOfSelectedPeople() {
+		String requestBody = "kettle1 mug";
+		// Add invitees names to request body
 		for (PeopleListItem person : dataList) {
 			if (person.isSelected()) {
-				invitees.add(person.getMugID());
+				requestBody = requestBody + " " + person.getName();
 			}
 		}
-		return invitees;
+		URL url;
+		try {
+			url = new URL("http://54.201.81.197:8080/test");
+			// Sending request
+			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+			urlConnection.setDoOutput(true);
+			urlConnection.getOutputStream().write(requestBody.getBytes());
+			// Reading response
+			InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+			String received = IOUtils.toString(in, "UTF-8");
+			urlConnection.disconnect();
+			return received;
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
