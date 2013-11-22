@@ -38,13 +38,16 @@
 
 #include <stdbool.h>
 #include "slip_ble.h"
-#define MS_UUID_BASE {0x23, 0xD1, 0xBC, 0xEA, 0x5F, 0x78, 0x23, 0x15, 0xDE, 0xEF, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00}
-#define MS_UUID_SERVICE 0x1523
-#define MS_UUID_ACC_CHAR 0x1524
-#define MS_UUID_DECLINED_CHAR 0x1525
-#define MS_UUID_PENDING_CHAR 0x1526
+#include "main.h"
 
-#define MAX_LEN 15
+//Base UUID for the meeting service 
+#define MS_UUID_BASE {0x23, 0xD1, 0xBC, 0xEA, 0x5F, 0x78, 0x23, 0x15, 0xDE, 0xEF, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00}
+#define MS_UUID_SERVICE 0x1523       //specific UUID of the service tisself
+#define MS_UUID_ACC_CHAR 0x1524      //UUID of Accepted characteristic
+#define MS_UUID_DECLINED_CHAR 0x1525 //UUID of Declined characteristic
+#define MS_UUID_PENDING_CHAR 0x1526  //UUID of Pending characteristic
+
+#define MAX_LEN 10
 
 // Forward declaration of the ble_ms_t type. 
 typedef struct ble_ms_s ble_ms_t;
@@ -69,10 +72,9 @@ typedef struct ble_ms_s
     ble_gatts_char_handles_t     pending_char_handles;          
     uint8_t                      uuid_type;
     uint16_t                     conn_handle;  
-    uint64_t                     pending_ids[MAX_LEN]; 
-    uint64_t                     accepted_ids[MAX_LEN]; 
-    uint64_t                     declined_ids[MAX_LEN]; 
-    uint8_t                      pending_size; 
+    uint64_t                     pending_ids[MAX_LEN];     //List of mug Ids to be invited
+    MUG_STATUS*                   mugs;
+    uint8_t                      pending_size;             //size of pending list
     bool                         is_notifying;
     ble_ms_pending_write_handler_t  pending_write_handler;
 } ble_ms_t;
@@ -85,7 +87,7 @@ typedef struct ble_ms_s
  *
  * @return      NRF_SUCCESS on successful initialization of service, otherwise an error code.
  */
-uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init);
+uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init, MUG_STATUS* mugs);
 
 /**@brief Meeting Service BLE stack event handler.
  *

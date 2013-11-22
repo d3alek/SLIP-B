@@ -23,8 +23,10 @@
 #include "ble_debug_assert_handler.h"
 #include "ble_ms.h"
 #include "ble.h"
+#include "main.h"
 
 //ble_ms_t*  start_ble();
+//int64_t* get_pending_mugs();
 void power_manage(void);
 int is_connected();
 void debug_ble_ids();
