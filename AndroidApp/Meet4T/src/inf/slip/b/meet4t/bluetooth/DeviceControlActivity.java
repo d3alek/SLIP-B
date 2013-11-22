@@ -294,8 +294,8 @@ public class DeviceControlActivity extends Activity {
     }
 
     private ArrayList<String> parseInviteesList(String invitees) {
-    	invitees = invitees.substring(2, invitees.length() - 1);
-		ArrayList<String> result = new ArrayList<String>(Arrays.asList(invitees.split(", M")));
+    	invitees = invitees.substring(1, invitees.length());
+		ArrayList<String> result = new ArrayList<String>(Arrays.asList(invitees.split(", m")));
 		return result;
 	}
 
@@ -453,6 +453,7 @@ public class DeviceControlActivity extends Activity {
     	}
     	c.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
 		String nextMug = getNextMug();
+		Log.d("Cat", "NextMug: " + nextMug);
 		if(nextMug != null) {
 			nextMug = nextMug + "0000000000000000".substring(nextMug.length());
 			c.setValue(nextMug);
