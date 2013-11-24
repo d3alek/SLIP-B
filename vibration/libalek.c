@@ -14,15 +14,15 @@
 #define FRAC_2d1 5000
 #define FRAC_2d2 2500
 #define FRAC_2d3 1250
-#define FRAC_2d4 625 
-#define FRAC_2d5 313 
-#define FRAC_2d6 156 
-#define FRAC_2d7 78 
-#define FRAC_2d8 39 
-#define FRAC_2d9 20 
-#define FRAC_2d10 10 
-#define FRAC_2d11 5 
-#define FRAC_2d12 2 
+#define FRAC_2d4 625
+#define FRAC_2d5 313
+#define FRAC_2d6 156
+#define FRAC_2d7 78
+#define FRAC_2d8 39
+#define FRAC_2d9 20
+#define FRAC_2d10 10
+#define FRAC_2d11 5
+#define FRAC_2d12 2
 
 #define FULL_SCALE_2G 1
 #define FULL_SCALE_4G 2
@@ -35,6 +35,15 @@ uint16_t prevx, prevy, prevz;
 
 char* buf[30];
 
+uint32_t rnd;
+bool bump_action() {
+    if (rnd++ % 20 == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
     uint16_t data = hi << 8 | lo;
     uint16_t origdata = data;
@@ -44,7 +53,7 @@ uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
         data &= 0xFFFC;
         data = (~data + 1);
     }
-    
+
     else {
         *minus = false;
         //simple_uart_putstring("+");
@@ -62,7 +71,7 @@ uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
 
     data = a * 1000 + b * 100 + c * 10 + d;
     */
-    
+
     int int_part;
 
     hi = data >> 8;
@@ -90,7 +99,7 @@ uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
         result += FRAC_2d3;
     if (value & (1<<4))
         result += FRAC_2d4;
-    
+
     value = (origdata << 4) >> 8;
     if (value & (1<<7))
         result += FRAC_2d5;
@@ -118,8 +127,8 @@ uint16_t s14_dec(uint8_t hi, uint8_t lo, bool* minus, uint16_t* mantissa) {
     if (*minus) {
         result = 1 - result;
     }
-    *mantissa = result; 
-    
+    *mantissa = result;
+
     return int_part;
 }
 
@@ -156,7 +165,7 @@ void vibration_update() {
     x = s14_dec(acceldata[0], acceldata[1], &xminus, &xmantissa);
     y = s14_dec(acceldata[2], acceldata[3], &yminus, &ymantissa);
     z = s14_dec(acceldata[4], acceldata[5], &zminus, &zmantissa);
-    
+
     MMA_getdata(acceldata);
 
     sprintf((char*)buf, "%c%d.%d %c%d.%d %c%d.%d\n", xminus?'-':' ', x, xmantissa, yminus?'-':' ', y, ymantissa, zminus?'-':' ', z, zmantissa);
