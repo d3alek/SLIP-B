@@ -70,7 +70,7 @@ public class DeviceControlActivity extends Activity {
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
     private boolean mConnected = false;
-    private BluetoothGattCharacteristic mNotifyCharacteristic;
+//    private BluetoothGattCharacteristic mNotifyCharacteristic;
 
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
@@ -119,6 +119,7 @@ public class DeviceControlActivity extends Activity {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
+                
                 inviteNextMug();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	Log.i("Cat", "action data available");
@@ -295,6 +296,7 @@ public class DeviceControlActivity extends Activity {
         }
         //Toast.makeText(this, "gattServices is NOT null, len: " + gattServices.size(), Toast.LENGTH_LONG).show();
         String uuid = null;
+        String serviceUuid = null;
         String unknownServiceString = getResources().getString(R.string.unknown_service);
         String unknownCharaString = getResources().getString(R.string.unknown_characteristic);
         ArrayList<HashMap<String, String>> gattServiceData = new ArrayList<HashMap<String, String>>();
@@ -306,13 +308,14 @@ public class DeviceControlActivity extends Activity {
         // Loops through available GATT Services.
         for (BluetoothGattService gattService : gattServices) {
             HashMap<String, String> currentServiceData = new HashMap<String, String>();
-            uuid = gattService.getUuid().toString();
-            if (uuid == SERVICE_I_WANT){
+            serviceUuid = gattService.getUuid().toString();
+            if (serviceUuid.equals(SERVICE_I_WANT)){
+            	Log.i(TAG, "SERVICE I WANT FOUND");
             	foundIt = true;
             }
             currentServiceData.put(
-                    LIST_NAME, SampleGattAttributes.lookup(uuid, unknownServiceString));
-            currentServiceData.put(LIST_UUID, uuid);
+                    LIST_NAME, SampleGattAttributes.lookup(serviceUuid, unknownServiceString));
+            currentServiceData.put(LIST_UUID, serviceUuid);
             gattServiceData.add(currentServiceData);
 
             ArrayList<HashMap<String, String>> gattCharacteristicGroupData =
@@ -324,6 +327,7 @@ public class DeviceControlActivity extends Activity {
 
             // Loops through available Characteristics.
             for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+               	Log.i(TAG, "Looping over gattCharacteristics for the service " + uuid);
                 charas.add(gattCharacteristic);
                 HashMap<String, String> currentCharaData = new HashMap<String, String>();
                 uuid = gattCharacteristic.getUuid().toString();
@@ -331,8 +335,13 @@ public class DeviceControlActivity extends Activity {
                         LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
                 currentCharaData.put(LIST_UUID, uuid);
                 gattCharacteristicGroupData.add(currentCharaData);
+//                if (serviceUuid.equals(SERVICE_I_WANT)) {
+                if (uuid.equals("00001526-1212-efde-1523-785feabcd123")) {
+                	mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
+                }
             }
             mGattCharacteristics.add(charas);
+
             gattCharacteristicData.add(gattCharacteristicGroupData);
             
         }
@@ -408,7 +417,10 @@ public class DeviceControlActivity extends Activity {
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
-		}
+		        //nextMug = "1111111111111111";                
+			//c.setValue(nextMug);                         
+                        //mBluetoothLeService.writeCharacteristic(c);      
+               }
     }
 
 //    private void notify(BluetoothGattCharacteristic c) {

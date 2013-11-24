@@ -38,6 +38,7 @@ public class SampleGattAttributes {
         attributes.put("00001524-1212-efde-1523-785feabcd123", "Accepted -- string provided by app");
         attributes.put("00001525-1212-efde-1523-785feabcd123", "Declined -- string provided by app");
         attributes.put("00001526-1212-efde-1523-785feabcd123", "Pending -- string provided by app");
+        attributes.put("00001528-1212-efde-1523-785feabcd123", "Bump -- string provided by app");
     }
 
     public static String lookup(String uuid, String defaultName) {
