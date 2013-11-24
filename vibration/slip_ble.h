@@ -32,5 +32,6 @@ int is_ready();
 void debug_ble_ids();
 void ble_update_temp(uint8_t* val);
 void ble_update_bump(uint8_t* val);
+void set_replies();
 
 #endif // __BLE_H
