@@ -99,8 +99,21 @@ void find_temperature(uint8_t * temperatureToReach, uint8_t * temperatureDiffere
 
 void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
 {
-	NVIC_SystemReset();
+	char buf[30];
+	sprintf(buf,"APP_ERR_HANDLER %x\n",error_code);
+	simple_uart_putstring(buf);
+
+	if(error_code == 5){
+	 //	radio_configure();		
+	    start_ble(MUG_LIST);
+	  //  twi_master_init();
+	}
+	if(error_code ==0 )
+	  NVIC_SystemReset();
+
+
 }
+
 
 // ======= RADIO COMMS =========
 void send_packet(uint8_t rep){
@@ -176,14 +189,14 @@ int main(){
     simple_uart_putstring("Configured radio\n");
 
 
-	start_ble(MUG_LIST);
+	ble_ms_t* p_ms = start_ble(MUG_LIST);
 	simple_uart_putstring("Bluetooth init\n");
 
 	twi_master_init();
 	simple_uart_putstring("TWI master init\n");
 
-	 init_vibration();
-	 simple_uart_putstring("Vibration init\n");
+	init_vibration();
+	simple_uart_putstring("Vibration init\n");
 
 	// temperature variables
 	uint8_t temperatureToReach = 0;
@@ -196,6 +209,7 @@ int main(){
 
 
 	bool radio_executed = false;
+	bool waitToConnectAndRSVP = false;
 
 	// main application loop
 	while (1) {
@@ -212,13 +226,22 @@ int main(){
 		 if (useTemperature) {
 		 	find_temperature(&temperatureToReach, &temperatureDifference, &currentTemperature, &hasReachedTemperature);
 		 }
-         //All the mugs that will be invited have been set 
+		 if (is_connected() && waitToConnectAndRSVP) {
+		 	set_replies();
+		 }
+         //All the mugs that will be invited have been set usig BLE
 		 if (is_ready() && !radio_executed) {
 			// Deal with radios
+            sd_ble_gap_disconnect(p_ms->conn_handle,0);
+            set_disconnected();
+
+            sprintf((char*)buf, "CONN %d\n", is_connected());
+            simple_uart_putstring(buf);
+
 		    sd_softdevice_disable();
 			radio_configure();		
            // simple_uart_putstring("Configured radio\n");
-			simple_uart_putstring("Disabled soft device\n");
+			simple_uart_putstring("Disabled soft device \n");
 			
 			// END - Deal with radios
 
@@ -306,18 +329,22 @@ int main(){
 						all_final_state = true;
 					}
 				}
+
 			}
 
 		 	// Deal with radios
-	         sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
-	       	 simple_uart_putstring("Enabled soft device\n");
+	        sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
+		    nrf_delay_ms(1000);
+	       	simple_uart_putstring("Enabled soft device\n");
+			start_ble(MUG_LIST);
 			// END - Deal with radios
 
-			 radio_executed = true;
-			 RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
+			radio_executed = true;
+			waitToConnectAndRSVP = true;
+			//RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
 
 		}								
-		//debug_ble_ids();
+		debug_ble_ids();
 		// vibration_update();
 		app_sched_execute();
 		nrf_delay_ms(500);

@@ -22,7 +22,7 @@
 
 #define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                          /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "Give Me Coffee"                                    /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "SLIP B"                                    /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -92,9 +92,6 @@ static void leds_init(void)
 
 }
 
-bool is_connected(){
-  return conn;
-}
 
 
 /**@brief Function for the Timer initialization.
@@ -167,7 +164,7 @@ static void advertising_init(void)
 
 //checks if id is already present in mugs struct
 static bool check_duplicate(ble_ms_t * p_ms, uint64_t id){
-
+  
    int i;
 
    for(i=0;i<p_ms->mug_len;i++){
@@ -184,7 +181,7 @@ static bool check_duplicate(ble_ms_t * p_ms, uint64_t id){
 
 /**@brief Function for handling a write to the Pending characteristic of the Meeting service.
  * @detail A pointer to this function is passed to the service in its init structure.
- *
+ *           
  *        Called on a write event to the pending charcteristic, which is defined in ble_ms.c
  */
 
@@ -193,13 +190,13 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
 {
 
     uint32_t      err_code;
-    uint64_t      mug_id;  //recived Mug ID
+    uint64_t      mug_id;  //recived Mug ID 
     unsigned char buf[32];
-
-    mug_id = id_decode(data); //Decodes the written data
-    sprintf((char*)buf, "BLE WRITE %llX\n",mug_id);
+   
+    mug_id = id_decode(data); //Decodes the written data 
+    sprintf((char*)buf, "BLE WRITE %d %llX\n",p_ms->mug_len,mug_id);
     simple_uart_putstring(buf);
-    //Reset list of mug ids that need to be
+    //Reset list of mug ids that need to be 
     if(mug_id == 0x1111111111111111){
 
        p_ms->ready = 1;
@@ -215,14 +212,14 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
            p_ms->mug_len = p_ms->mug_len + 1;    //increment number of mugs in struct
        }
        else{
-         sprintf((char*)buf, "DUPPLICATE MUG ID %llX\n",mug_id);
+         sprintf((char*)buf, "DUPLICATE MUG ID %llX\n",mug_id);
          simple_uart_putstring(buf);
        }
 
      }
 
-     //Update GATTS pending characteristics to zero so that the android app
-     //knows that we have recieved the mug ID
+     //Update GATTS pending characteristics to zero so that the android app 
+     //knows that we have recieved the mug ID 
      uint16_t zlen = sizeof(uint8_t);
      uint8_t zero = 0;
      err_code = sd_ble_gatts_value_set(p_ms->pending_char_handles.value_handle,
@@ -236,7 +233,7 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
      ble_gatts_hvx_params_t hvx_params;
      uint16_t               hvx_len;
      hvx_len = zlen;
-
+                
      memset(&hvx_params, 0, sizeof(hvx_params));
 
      hvx_params.handle   = p_ms->pending_char_handles.value_handle;
@@ -247,8 +244,8 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
 
      err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
 
-
-
+  
+    
 
 }
 
@@ -302,6 +299,10 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
     }
 }
 
+
+int is_connected(){
+  return conn;
+}
 
 /**@brief Function for handling a Connection Parameters error.
  *
@@ -364,37 +365,27 @@ void set_replies(){
   int acc_size = 3;
   int dec_size = 2;
   uint32_t err_code = NRF_SUCCESS;
-
+  
   uint64_t acc_id1 = 0x5b83092c6767bb6d;
   uint64_t acc_id2 = 0xc5861596e2118c8d;
   uint64_t acc_id3 = 0x32db4358f348ea3b;
   uint64_t acc_ids[acc_size];
   acc_ids[0] = acc_id1;
-  acc_ids[1] = acc_id2;
+  acc_ids[1] = acc_id2; 
   acc_ids[2] = acc_id3;
 
-  simple_uart_putstring("ACCPETED BEFORE\n");
-
-
-
-  err_code = ble_ms_accepted_ids_update(&m_ms,acc_ids,acc_size);
-  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
-        APP_ERROR_CHECK(err_code);
-  }
-
-  uint64_t dec_id1 = 0x21de1a2c34a9b06f;
-  uint64_t dec_id2 = 0x30b315ab1ce4ea38;
-  uint64_t dec_ids[dec_size];
-  dec_ids[0] = dec_id1;
-  dec_ids[1] = dec_id2;
-
   simple_uart_putstring("BEFORE\n");
+char buf[30];
 
-  err_code = ble_ms_declined_ids_update(&m_ms,dec_ids,dec_size);
 
+  err_code = ble_ms_pending_ids_update(&m_ms,acc_ids,acc_size);
   if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+
+    sprintf((char*)buf, "ERROR 3: %lx\n", err_code);
+    simple_uart_putstring(buf);
         APP_ERROR_CHECK(err_code);
   }
+
 
   simple_uart_putstring("SET REPLIES\n");
 }
@@ -420,9 +411,10 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
+            simple_uart_putstring("DISCO\n");
             nrf_gpio_pin_clear(CONNECTED_LED_PIN_NO);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
-            //conn = 0;
+            conn = 0;
             err_code = app_button_disable();
             if (err_code == NRF_SUCCESS)
             {
@@ -467,7 +459,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
                 err_code = sd_power_system_off();
             }
             break;
-
+            
 
         default:
             break;
@@ -541,7 +533,8 @@ static void buttons_init(void)
 int is_ready(){
   if (conn && m_ms.ready){
       return true;
-  }
+  }    
+
   return false;
 }
 
@@ -550,33 +543,37 @@ int is_ready(){
 void debug_ble_ids(){
   int i;
   unsigned char buf[32];
+  
+  sprintf((char*)buf, "%d MUGS SEEN, CONN %d\n",m_ms.mug_len, is_connected());
 
-  sprintf((char*)buf, "%d MUGS SEEN:\n",m_ms.mug_len);
-
-  for(i=0;i< m_ms.mug_len; i++){
-     sprintf((char*)buf, "%d\n",m_ms.mugs[i].MUG_ID);
-     simple_uart_putstring(buf);
-  }
+  // for(i=0;i< m_ms.mug_len; i++){
+  //    sprintf((char*)buf, "%d\n",m_ms.mugs[i].MUG_ID);
+  //    simple_uart_putstring(buf);
+  // }
+    //    simple_uart_putstring(buf);
+        simple_uart_putstring(buf);
 
 }
 
-
+void set_disconnected() {
+  conn = 0;
+}
 
 /**@brief Function for initialising ble
  */
-void start_ble(MUG_STATUS* mug_list)
+ble_ms_t* start_ble(MUG_STATUS* mug_list)
 {
-
+    
 
     conn = 0;                //is connected set to false
-    leds_init();
+    leds_init();                  
     timers_init();
     gpiote_init();
     buttons_init();
     ble_stack_init();
     scheduler_init();
     gap_params_init();
-    services_init(mug_list);
+    services_init(mug_list);    
     advertising_init();
     conn_params_init();
     sec_params_init();
@@ -584,38 +581,40 @@ void start_ble(MUG_STATUS* mug_list)
     // Start advertising
     advertising_start();
 
+    return &m_ms;
+
 }
 
 //updates the temperature chracteristic in GATT and notifies the client
 void ble_update_temp(uint8_t* val)
 {
     uint32_t err_code = NRF_SUCCESS;
-
+    
     uint16_t len = 1;
-
-
+   
+        
     //Update GATT database with new declied characterisic
     err_code = sd_ble_gatts_value_set(m_ms.temp_char_handles.value_handle,
                                           0,
                                           &len,
                                           val);
-
-
+    
+        
     APP_ERROR_CHECK(err_code);
 
     // Send updated value notification to android app
     ble_gatts_hvx_params_t hvx_params;
     uint16_t               hvx_len;
     hvx_len = len;
-
+            
     memset(&hvx_params, 0, sizeof(hvx_params));
-
+            
     hvx_params.handle   = m_ms.temp_char_handles.value_handle;
     hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
     hvx_params.offset   = 0;
     hvx_params.p_len    = &hvx_len;
     hvx_params.p_data   = val;
-
+            
     err_code = sd_ble_gatts_hvx(m_ms.conn_handle, &hvx_params);
 
     if ((err_code == NRF_SUCCESS) && (hvx_len != len))
@@ -623,7 +622,7 @@ void ble_update_temp(uint8_t* val)
             err_code = NRF_ERROR_DATA_SIZE;
         }
 
-
+  
     if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
         char buf[30];
         sprintf((char*)buf, "Temp update ERR %lX\n",err_code);
@@ -639,32 +638,32 @@ void ble_update_temp(uint8_t* val)
 void ble_update_bump(uint8_t* val)
 {
     uint32_t err_code = NRF_SUCCESS;
-
+    
     uint16_t len = 1;
-
-
+   
+        
     //Update GATT database with new declied characterisic
     err_code = sd_ble_gatts_value_set(m_ms.bump_char_handles.value_handle,
                                           0,
                                           &len,
                                           val);
-
-
+    
+        
     APP_ERROR_CHECK(err_code);
 
     // Send updated value notification to android app
     ble_gatts_hvx_params_t hvx_params;
     uint16_t               hvx_len;
     hvx_len = len;
-
+            
     memset(&hvx_params, 0, sizeof(hvx_params));
-
+            
     hvx_params.handle   = m_ms.bump_char_handles.value_handle;
     hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
     hvx_params.offset   = 0;
     hvx_params.p_len    = &hvx_len;
     hvx_params.p_data   = val;
-
+            
     err_code = sd_ble_gatts_hvx(m_ms.conn_handle, &hvx_params);
 
     if ((err_code == NRF_SUCCESS) && (hvx_len != len))
@@ -672,7 +671,7 @@ void ble_update_bump(uint8_t* val)
             err_code = NRF_ERROR_DATA_SIZE;
         }
 
-
+  
     if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
         char buf[30];
         sprintf((char*)buf, "Bump update ERR %lX\n",err_code);
@@ -682,63 +681,91 @@ void ble_update_bump(uint8_t* val)
 }
 
 
-
 //Sends accpeted and rejected mug ids to the app
 //Then resets muss struct
 void RSVP_App(){
 
   uint32_t err_code = NRF_SUCCESS;
   int i;
-  int acc_size =0;
-  int dec_size =0;
+  //int acc_size =0;
+  //int dec_size =0;
+  int acked_size = 0;
 
   //finds the number of accpeted and declined mugs
   for(i=0;i<m_ms.mug_len;i++){
-      if(m_ms.mugs[i].PIPELINE_STATUS == REJECTED){
-            dec_size++;
-      }
-      else if(m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED){
-            acc_size++;
-      }
+      // if(m_ms.mugs[i].PIPELINE_STATUS == REJECTED){
+      //       dec_size++;
+      // }
+      // else if(m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED){
+      //       acc_size++;
+      // }
+    if(m_ms.mugs[i].PIPELINE_STATUS == ON ||m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED ||m_ms.mugs[i].PIPELINE_STATUS == REJECTED ){
+             acked_size++;
+
+       }
   }
 
-  uint64_t acc_ids[acc_size];
-  uint64_t dec_ids[dec_size];
-  int a =0;
-  int d =0;
-
+  // uint64_t acc_ids[acc_size];
+  // uint64_t dec_ids[dec_size];
+  // int a =0;
+  // int d =0;
+  
+  if (acked_size ==0 ){
+    simple_uart_putstring("NO IDS TO RETURN TO APP");
+    return;
+  }
+  uint64_t acked_ids[acked_size];
+  int ak =0;
+char buf[30];
   //populates lists of accepted and declined mugs
   for(i=0;i<m_ms.mug_len;i++){
-      if(m_ms.mugs[i].PIPELINE_STATUS == REJECTED){
-            dec_ids[d] = m_ms.mugs[i].MUG_ID;
-            d++;
-      }
-      else if(m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED){
-            acc_ids[a] = m_ms.mugs[i].MUG_ID;
-            a++;
+      // if(m_ms.mugs[i].PIPELINE_STATUS == REJECTED){
+      //       dec_ids[d] = m_ms.mugs[i].MUG_ID;
+      //       d++;
+      // }
+      // else if(m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED){
+      //       acc_ids[a] = m_ms.mugs[i].MUG_ID;
+      //       a++;
+      // }
+               sprintf((char*)buf, "GOT %llX status %d\n",m_ms.mugs[i].MUG_ID,m_ms.mugs[i].PIPELINE_STATUS);
+              simple_uart_putstring(buf);
+
+      if(m_ms.mugs[i].PIPELINE_STATUS == ON ||m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED ||m_ms.mugs[i].PIPELINE_STATUS == REJECTED ){
+             acked_ids[ak] = m_ms.mugs[i].MUG_ID;
+               sprintf((char*)buf, "ADDED %llX\n",acked_ids[ak]);
+               simple_uart_putstring(buf);
+
+             ak++;
       }
   }
 
-  //Updates GATSS informaton for accpeted ids
-  err_code = ble_ms_accepted_ids_update(&m_ms,acc_ids,acc_size);
-  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
-        APP_ERROR_CHECK(err_code);
-  }
+  // //Updates GATSS informaton for accpeted ids
+  // err_code = ble_ms_accepted_ids_update(&m_ms,acc_ids,acc_size);
+  // if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+  //       APP_ERROR_CHECK(err_code);
+  // }
 
-  //Updates GATSS informaton for declined ids
-  err_code = ble_ms_declined_ids_update(&m_ms,dec_ids,dec_size);
-  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+  // //Updates GATSS informaton for declined ids
+  // err_code = ble_ms_declined_ids_update(&m_ms,dec_ids,dec_size);
+  // if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+  //       APP_ERROR_CHECK(err_code);
+  // }
+
+   ///Updates GATSS informaton for declined ids
+   err_code = ble_ms_pending_ids_update(&m_ms,acked_ids,acked_size);
+   if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
         APP_ERROR_CHECK(err_code);
-  }
+   }
+
 
   simple_uart_putstring("SENT RSVP\n");
 
-  //Reset Mugs ids ready for next set of invitations
+  //Reset Mugs ids ready for next set of invitations   
   m_ms.mug_len = 0;
   m_ms.ready=0;
   memset(m_ms.mugs, 0, sizeof(m_ms.mugs)); //reset all mug ids to zero
   simple_uart_putstring("MUG IDS RESET\n");
-
-
-
+ 
+        
+ 
 }

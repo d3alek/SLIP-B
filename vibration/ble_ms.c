@@ -505,12 +505,7 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
             
     memset(&hvx_params, 0, sizeof(hvx_params));
 
-    //err_code = sd_ble_gatts_sys_attr_set(p_ms->conn_handle, NULL, 0); 
-    // sprintf((char*)buf, "ERROR : %llx\n", err_code);
-    // simple_uart_putstring(buf);
-
-
-            
+        
     hvx_params.handle   = p_ms->accepted_char_handles.value_handle;
     hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
     hvx_params.offset   = 0;
@@ -524,10 +519,6 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
             err_code = NRF_ERROR_DATA_SIZE;
         }
 
-    if (err_code == NRF_ERROR_DATA_SIZE ){
-            simple_uart_putstring("DATA SIZE ERROR\n");
-
-    }
     sprintf((char*)buf, "ERROR : %lx\n", err_code);
     simple_uart_putstring(buf);
 
@@ -576,6 +567,58 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
         {
             err_code = NRF_ERROR_DATA_SIZE;
         }
+
+    return err_code;
+}
+
+
+//updates the declined chracteristic in GATT and notifies the client
+uint32_t ble_ms_pending_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len)
+{
+    uint32_t err_code = NRF_SUCCESS;
+char buf[30];
+    //encoded string for GATT
+    uint8_t encoded_ids[MAX_LEN * 16]; 
+    
+    //encode the ids and return the length of encoding
+    uint8_t encode_len = id_encode(ids,len,encoded_ids);
+   
+        
+    //Update GATT database with new declied characterisic
+    err_code = sd_ble_gatts_value_set(p_ms->pending_char_handles.value_handle,
+                                          0,
+                                          &len,
+                                          encoded_ids);
+    if (err_code != NRF_SUCCESS)
+        {
+            return err_code;
+        }
+        
+    sprintf((char*)buf, "ERROR 1: %lx\n", err_code);
+    simple_uart_putstring(buf);
+
+    // Send updated value notification to android app
+    ble_gatts_hvx_params_t hvx_params;
+    uint16_t               hvx_len;
+    hvx_len = encode_len;
+            
+    memset(&hvx_params, 0, sizeof(hvx_params));
+            
+    hvx_params.handle   = p_ms->pending_char_handles.value_handle;
+    hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
+    hvx_params.offset   = 0;
+    hvx_params.p_len    = &hvx_len;
+    hvx_params.p_data   = encoded_ids;
+            
+    err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
+
+    if ((err_code == NRF_SUCCESS) && (hvx_len != len))
+        {
+            err_code = NRF_ERROR_DATA_SIZE;
+        }
+
+    sprintf((char*)buf, "ERROR 2: %lx\n", err_code);
+    simple_uart_putstring(buf);
 
     return err_code;
 }

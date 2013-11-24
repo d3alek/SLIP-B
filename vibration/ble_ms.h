@@ -112,6 +112,9 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 //TODO add brief
 uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len);
 
+uint32_t ble_ms_pending_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len);
+
+
 #endif // BLE_MS_H__
 
 /** @} */
