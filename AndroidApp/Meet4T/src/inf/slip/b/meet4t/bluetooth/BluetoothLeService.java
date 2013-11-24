@@ -146,21 +146,22 @@ public class BluetoothLeService extends Service {
         // carried out as per profile specifications:
         // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
             // For all other profiles, writes the data formatted in HEX.
-        	Log.i(TAG, "broadcastUpdate " + characteristic.getUuid());
+        	Log.i(TAG, "broadcastUpdate " + characteristic.getUuid() + " " + intent.getAction());
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
                 intent.putExtra(EXTRA_DATA, characteristic.getUuid().toString()); //new String(data) + "\n" + stringBuilder.toString());
-                Log.d("Cat", "\"" + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 3))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 4))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6))
-                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7)) + "\"");
+                Log.i(TAG, "data " + stringBuilder.toString());
+//                Log.d("Cat", "\"" + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 3))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 4))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6))
+//                		+ " " + Integer.toHexString(characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7)) + "\"");
             }
         sendBroadcast(intent);
     }
@@ -311,10 +312,16 @@ public class BluetoothLeService extends Service {
         BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
                 UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
         Log.i(TAG, "descriptor " + descriptor);
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        mBluetoothGatt.writeDescriptor(descriptor);
+        if (descriptor != null) {
+	        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+	        mBluetoothGatt.writeDescriptor(descriptor);
+	        Log.i(TAG, "Characteristic notification set!");
+        }
+        else {
+        	Toast.makeText(getApplicationContext(), "Descriptor is null in setCharacteristicNotification", Toast.LENGTH_SHORT).show();
+	        Log.i(TAG, "Characteristic notification not set as descriptor is null!");
+        }
         
-        Log.i(TAG, "Characteristic notification set!");
     }
 
     /**

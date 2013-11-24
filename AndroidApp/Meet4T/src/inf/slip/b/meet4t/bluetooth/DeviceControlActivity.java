@@ -126,6 +126,7 @@ public class DeviceControlActivity extends Activity {
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 BluetoothGattCharacteristic changedCharacteristic = mBluetoothLeService.getCharacteristicByUuid(UUID.fromString(data));
                 mBluetoothLeService.readCharacteristic(changedCharacteristic);
+                Log.i("Cat", "Value is " + changedCharacteristic.getValue());
                 Log.i("Cat", data + "'s new value is: " + changedCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0));
                 if (data.equals(PENDING_CHARACTERISTIC)) {
 	                inviteNextMug();
@@ -152,6 +153,16 @@ public class DeviceControlActivity extends Activity {
                     if (mGattCharacteristics != null) {
                         final BluetoothGattCharacteristic characteristic =
                                 mGattCharacteristics.get(groupPosition).get(childPosition);
+                        Log.i(TAG, "Clicked characteristic's value is " + characteristic.getValue());
+                        if ( characteristic.getValue() == null) {
+                        	Log.i(TAG, "Value is null");
+                        }
+                        else {
+	                        StringBuilder sb = new StringBuilder();
+	                        for(byte byteChar : characteristic.getValue())
+	                            sb.append(String.format("%02x ", byteChar));
+	                        Log.i(TAG, "Clicked characteristic's value is " + sb.toString());
+                        }
                         inviteNextMug();
                         return true;
                     }
@@ -199,6 +210,7 @@ public class DeviceControlActivity extends Activity {
 
     @Override
     protected void onPause() {
+    	lastSent = false;
         super.onPause();
         unregisterReceiver(mGattUpdateReceiver);
     }
@@ -241,6 +253,7 @@ public class DeviceControlActivity extends Activity {
 
     private int requestCode = 1;
 	private ArrayList<String> mugQueue;
+	private boolean lastSent;
 
     private void invitePeople(){
     	Intent intent = new Intent(this, InvitePeopleActivity.class);
@@ -415,8 +428,13 @@ public class DeviceControlActivity extends Activity {
     		Log.d("Cat", "String value before writing:  " + c.getStringValue(0));
     		mBluetoothLeService.writeCharacteristic(c);
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
-		} else {
+		} else if (!lastSent) {
+			Log.i(TAG, "Sending last");
+			lastSent = true;
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
+			nextMug = "1111111111111111";
+			c.setValue(nextMug);
+			mBluetoothLeService.writeCharacteristic(c);
 		}
     }
 
