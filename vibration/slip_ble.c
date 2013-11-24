@@ -20,9 +20,9 @@
 #include "simple_uart.h"
 
 
-#define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                            /**< Button used to wake up the application. */
+#define WAKEUP_BUTTON_PIN               EVAL_BOARD_BUTTON_0                          /**< Button used to wake up the application. */
 
-#define DEVICE_NAME                     "SLIP B"                           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "SLIP B"                                    /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -199,24 +199,17 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
     //Reset list of mug ids that need to be 
     if(mug_id == 0x1111111111111111){
 
-      //CALL RADIO INVITE
-       //memset(p_ms->mugs, 0, sizeof(p_ms->mugs)); //reset all mug ids to zero
-       //simple_uart_putstring("PENDING RESET\n");
-        p_ms->ready = 1;
+       p_ms->ready = 1;
 
     }
     //otherwise update pending list with new mug ID
     else{
-        if( p_ms->mug_len == 0){
-            p_ms->ready=1;
-        }
-        
+
         //checks if mug id has already been seen
         if(!check_duplicate(p_ms,mug_id)){
            p_ms->mugs[p_ms->mug_len].MUG_ID = mug_id;           //set mug id in struct
            p_ms->mugs[p_ms->mug_len].PIPELINE_STATUS = NONE;    //init pipeline status
            p_ms->mug_len = p_ms->mug_len + 1;    //increment number of mugs in struct
-
        }
        else{
          sprintf((char*)buf, "DUPPLICATE MUG ID %llX\n",mug_id);
@@ -251,11 +244,7 @@ static void pending_write_handler(ble_ms_t * p_ms, uint8_t* data)
 
      err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
 
-     if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
-        sprintf((char*)buf, "Pending write ERR %lX\n",err_code);
-        simple_uart_putstring(buf);
-        APP_ERROR_CHECK(err_code);
-     }
+  
     
 
 }
@@ -368,7 +357,7 @@ static void advertising_start(void)
 //==================================================================
 //Dummy function for debugging accepted and declined Characteristics
 //==================================================================
-static void set_replies(){
+void set_replies(){
   int acc_size = 3;
   int dec_size = 2;
   uint32_t err_code = NRF_SUCCESS;
@@ -381,6 +370,10 @@ static void set_replies(){
   acc_ids[1] = acc_id2; 
   acc_ids[2] = acc_id3;
 
+  simple_uart_putstring("ACCPETED BEFORE\n");
+
+
+
   err_code = ble_ms_accepted_ids_update(&m_ms,acc_ids,acc_size);
   if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
         APP_ERROR_CHECK(err_code);
@@ -392,6 +385,8 @@ static void set_replies(){
   dec_ids[0] = dec_id1;
   dec_ids[1] = dec_id2; 
 
+  simple_uart_putstring("BEFORE\n");
+
   err_code = ble_ms_declined_ids_update(&m_ms,dec_ids,dec_size);
 
   if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
@@ -399,8 +394,8 @@ static void set_replies(){
   }
 
   simple_uart_putstring("SET REPLIES\n");
-
 }
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -419,13 +414,12 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             conn = 1;
             err_code = app_button_enable();
-            set_replies();                   //DEBUG FUNCTION SHOULD BE REMOVED
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
             nrf_gpio_pin_clear(CONNECTED_LED_PIN_NO);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
-
+            //conn = 0;
             err_code = app_button_disable();
             if (err_code == NRF_SUCCESS)
             {
@@ -540,14 +534,11 @@ static void buttons_init(void)
 }
 
 
-//Returns true if device is connected
+//Returns true if device is connected and all mug ids have been seen
 int is_ready(){
   if (conn && m_ms.ready){
       return true;
-      simple_uart_putstring("aye\n");
-
   }    
-
   return false;
 }
 
@@ -556,11 +547,13 @@ int is_ready(){
 void debug_ble_ids(){
   int i;
   unsigned char buf[32];
+  
+  sprintf((char*)buf, "%d MUGS SEEN:\n",m_ms.mug_len);
 
-  //for(i=0;i< m_ms.mug_len; i++){
-     sprintf((char*)buf, "MUG size %d\n",m_ms.mug_len);
+  for(i=0;i< m_ms.mug_len; i++){
+     sprintf((char*)buf, "%d\n",m_ms.mugs[i].MUG_ID);
      simple_uart_putstring(buf);
-  //}
+  }
 
 }
 
@@ -688,6 +681,7 @@ void ble_update_bump(uint8_t* val)
 
 
 //Sends accpeted and rejected mug ids to the app
+//Then resets muss struct
 void RSVP_App(){
 
   uint32_t err_code = NRF_SUCCESS;
@@ -735,5 +729,13 @@ void RSVP_App(){
   }
 
   simple_uart_putstring("SENT RSVP\n");
+
+  //Reset Mugs ids ready for next set of invitations   
+  m_ms.mug_len = 0;
+  m_ms.ready=0;
+  memset(m_ms.mugs, 0, sizeof(m_ms.mugs)); //reset all mug ids to zero
+  simple_uart_putstring("MUG IDS RESET\n");
+ 
+        
  
 }

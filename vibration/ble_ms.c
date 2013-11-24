@@ -53,6 +53,7 @@ static void on_write(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
    if ((p_evt_write->handle == p_ms->pending_char_handles.value_handle) &&
        (p_ms->pending_write_handler != NULL))
    {
+
        //calls pending_write_handler in slip_ble.c
        p_ms->pending_write_handler(p_ms, p_evt_write->data);
    }
@@ -73,6 +74,7 @@ void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GATTS_EVT_WRITE:
+         //   set_replies();
             on_write(p_ms, p_ble_evt);
             break;
             
@@ -412,6 +414,18 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init, MUG_STATU
         return err_code;
     }
     
+    
+    //initalises the pending characteristic
+    err_code  = bump_char_add(p_ms, p_ms_init);
+    if (err_code != NRF_SUCCESS)
+    {
+        return err_code;
+    }
+    
+
+
+
+
     return NRF_SUCCESS;
 }
 
@@ -482,6 +496,7 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
             return err_code;
         }
         
+    char buf[30];
 
     // Send updated value notification to andriod app
     ble_gatts_hvx_params_t hvx_params;
@@ -489,6 +504,12 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
     hvx_len = encode_len;
             
     memset(&hvx_params, 0, sizeof(hvx_params));
+
+    //err_code = sd_ble_gatts_sys_attr_set(p_ms->conn_handle, NULL, 0); 
+    // sprintf((char*)buf, "ERROR : %llx\n", err_code);
+    // simple_uart_putstring(buf);
+
+
             
     hvx_params.handle   = p_ms->accepted_char_handles.value_handle;
     hvx_params.type     = BLE_GATT_HVX_NOTIFICATION;
@@ -503,6 +524,12 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
             err_code = NRF_ERROR_DATA_SIZE;
         }
 
+    if (err_code == NRF_ERROR_DATA_SIZE ){
+            simple_uart_putstring("DATA SIZE ERROR\n");
+
+    }
+    sprintf((char*)buf, "ERROR : %lx\n", err_code);
+    simple_uart_putstring(buf);
 
     return err_code;
 }
