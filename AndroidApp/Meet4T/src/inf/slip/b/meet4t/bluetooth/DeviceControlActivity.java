@@ -408,7 +408,10 @@ public class DeviceControlActivity extends Activity {
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
-		}
+		        //nextMug = "1111111111111111";                
+			//c.setValue(nextMug);                         
+                        //mBluetoothLeService.writeCharacteristic(c);      
+               }
     }
 
 //    private void notify(BluetoothGattCharacteristic c) {
