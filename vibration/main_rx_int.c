@@ -10,7 +10,7 @@
 #include "libalek.h"
 #include "math.h"
 #include "simple_uart.h"
-#include "slip_ble.h"
+#include "ble/slip_ble.h"
 #include "radio_config.h"
 #include "app_scheduler.h"
 
@@ -88,30 +88,56 @@ bool receive_packet(uint64_t timeout){
 
 // ======= END - RADIO COMMS =========
 
-int main(){
+
+/*
+==============================================
+Function: initialize_all(void)
+
+	Initialize oscillator, radio, bluetooth,
+	twi and vibration	
+
+==============================================
+*/
+static void initialize_all()
+{
+	char buf[30];
 	// Start 16 MHz crystal oscillator.
 	NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 	NRF_CLOCK->TASKS_HFCLKSTART    = 1;
-
-	// Wait for the external oscillator to start up.
-	while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}
-
+	
+        // oscillator
+	while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {
+		// busy wait until the oscilator is up and running
+	}
+	
 	simple_uart_config(0, 23, 0, 22, 0);
-	uint8_t uart_data;
-	char* buf[32];
-
-    radio_configure();
+	simple_uart_putstring("INIT\n");
+	
+	// initiliaze radio
+    radio_configure(); 
     simple_uart_putstring("Configured radio\n");
 
-	start_ble(MUG_LIST);
-	simple_uart_putstring("Bluetooth init\n");
-
+	// initialize bluetooth
+    start_ble(MUG_LIST); 
+	simple_uart_putstring("BLUETOOTH STARTED\n");
+		
+	// initialize twi
 	twi_master_init();
 	simple_uart_putstring("TWI master init\n");
 
 	init_vibration();
 	simple_uart_putstring("Vibration init\n");
 
+
+}
+
+
+int main(){
+	
+    initialize_all();
+    char buf[30];
+	uint8_t uart_data;
+	
 	// Print Device ID
 	uint64_t this_device_id = (((uint64_t) NRF_FICR->DEVICEID[1] << 32) | ((uint64_t) NRF_FICR->DEVICEID[0]));
 	sprintf((char*)buf, "ID: %llx\n",  this_device_id);
@@ -189,6 +215,8 @@ int main(){
 		 		}
 		 		if (bump_action()) {
 		 			disovery_complete = true;
+		 			// uint8_t bump_evt = 1;
+		 			// ble_update_bump(&bump_evt)
 		 		}
 			}
 
