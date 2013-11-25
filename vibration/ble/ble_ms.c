@@ -52,8 +52,6 @@ static void on_write(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
    if ((p_evt_write->handle == p_ms->pending_char_handles.value_handle) &&
        (p_ms->pending_write_handler != NULL))
    {
-
-       //calls pending_write_handler in slip_ble.c
        p_ms->pending_write_handler(p_ms, p_evt_write->data);
    }
 }
@@ -72,7 +70,6 @@ void ble_ms_on_ble_evt(ble_ms_t * p_ms, ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GATTS_EVT_WRITE:
-         //   set_replies();
             on_write(p_ms, p_ble_evt);
             break;
             
@@ -168,8 +165,6 @@ uint64_t id_decode(uint8_t* encoded_ids)
    
      return decoded_id;
 }
-
-
 
 //splits each uint64_t id into 16 uint8_t data items chars so it can by sent by GATT 
 static uint8_t id_encode(uint64_t* ids, uint8_t num_ids, uint8_t * encoded_buffer)

@@ -32,7 +32,9 @@ int is_ready();
 void debug_ble_ids();
 void ble_evt_dispatch(ble_evt_t * p_ble_evt);
 void set_replies();
-#define DEVICE_NAME                     "SLIP B"                                    /**< Name of device. Will be included in the advertising data. */
+void services_init(MUG_STATUS* mugs);
+
+#define DEVICE_NAME                     "FUCK SLIP"                                    /**< Name of device. Will be included in the advertising data. */
 #define DEAD_BEEF                       0xDEADBEEF        
 
 #endif // __BLE_H
