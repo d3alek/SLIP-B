@@ -10,7 +10,7 @@
 #include "libalek.h"
 #include "math.h"
 #include "simple_uart.h"
-#include "slip_ble.h"
+#include "ble/slip_ble.h"
 #include "radio_config.h"
 #include "app_scheduler.h"
 
@@ -173,30 +173,61 @@ bool receive_packet(uint64_t timeout){
 
 // ======= END - RADIO COMMS =========
 
-int main(){
+/*
+==============================================
+Function: initialize_all(void)
+
+	Initialize oscillator, radio, bluetooth,
+	twi and vibration	
+
+==============================================
+ */
+static ble_ms_t* initialize_all()
+{
+	char buf[30];
 	// Start 16 MHz crystal oscillator.
 	NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 	NRF_CLOCK->TASKS_HFCLKSTART    = 1;
-
-	// Wait for the external oscillator to start up.
-	while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {}
-
+	
+        // oscillator
+	while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {
+		// busy wait until the oscilator is up and running
+	}
+	
 	simple_uart_config(0, 23, 0, 22, 0);
-	uint8_t uart_data;
-	char* buf[32];
+	simple_uart_putstring("INIT\n");
+	
+	// initiliaze radio
+	simple_uart_putstring("RADIO INIT\n");
+    radio_configure(); 
+    simple_uart_putstring("DONE RADIO INIT\n");
 
-    radio_configure();		
-    simple_uart_putstring("Configured radio\n");
-
-
-	ble_ms_t* p_ms = start_ble(MUG_LIST);
-	simple_uart_putstring("Bluetooth init\n");
-
-	twi_master_init();
-	simple_uart_putstring("TWI master init\n");
-
+	// initialize bluetooth
+	ble_ms_t* p_ms = start_ble(MUG_LIST); 
+	simple_uart_putstring("BLUETOOTH STARTED\n");
+		
+	// initialize twi
+	simple_uart_putstring("TWI MASTER INIT\n");
+	twi_master_init(); 
+	simple_uart_putstring("DONE TWI MASTER INIT\n");
+		
+	// initialize vibration
+	simple_uart_putstring("INIT VIBRATION\n");
 	init_vibration();
-	simple_uart_putstring("Vibration init\n");
+	simple_uart_putstring("INIT VIBRATION DONE\n");
+
+	// initialize temperature
+	nrf_temp_init();
+
+	return p_ms;
+}
+
+
+int main(){
+	
+
+    ble_ms_t* p_ms = initialize_all();
+	char buf[30];
 
 	// temperature variables
 	uint8_t temperatureToReach = 0;
@@ -204,8 +235,7 @@ int main(){
 	uint8_t currentTemperature = 0;
 	int8_t hasReachedTemperature = 0;
 	int8_t useTemperature = 0;
-	// initialize temperature
-	nrf_temp_init();
+	
 
 
 	bool radio_executed = false;
@@ -213,34 +243,29 @@ int main(){
 
 	// main application loop
 	while (1) {
-		// Block execution until you get Serial (2 bytes including \n)
-		// simple_uart_putstring("Ready to send!\n");
-		// uart_data = simple_uart_get();
-		// uart_data = simple_uart_get();
-		// simple_uart_putstring("Sending!\n");
-
-		// MUG_LIST[0].MUG_ID = 0xd163bbdd530ec035;
-		 //MUG_LIST[0].PIPELINE_STATUS = NONE;
-
+	
 		 //Check the temperature rise.
 		 if (useTemperature) {
 		 	find_temperature(&temperatureToReach, &temperatureDifference, &currentTemperature, &hasReachedTemperature);
 		 }
+         /*===========================================
+                  BLE DEBUG
+         ==========================================*/
 		 if (is_connected() && waitToConnectAndRSVP) {
 		 	set_replies();
 		 }
          //All the mugs that will be invited have been set usig BLE
 		 if (is_ready() && !radio_executed) {
-			// Deal with radios
+
+		 	//disconnect ble
             sd_ble_gap_disconnect(p_ms->conn_handle,0);
             set_disconnected();
-
             sprintf((char*)buf, "CONN %d\n", is_connected());
             simple_uart_putstring(buf);
 
+			// Deal with radios
 		    sd_softdevice_disable();
 			radio_configure();		
-           // simple_uart_putstring("Configured radio\n");
 			simple_uart_putstring("Disabled soft device \n");
 			
 			// END - Deal with radios
@@ -336,14 +361,16 @@ int main(){
 	        sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
 		    nrf_delay_ms(1000);
 	       	simple_uart_putstring("Enabled soft device\n");
+
+	       	//restart ble
 			start_ble(MUG_LIST);
-			// END - Deal with radios
 
 			radio_executed = true;
 			waitToConnectAndRSVP = true;
 			//RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
 
-		}								
+		}		
+
 		debug_ble_ids();
 		// vibration_update();
 		app_sched_execute();
