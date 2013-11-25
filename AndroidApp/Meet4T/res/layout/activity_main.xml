@@ -25,24 +25,13 @@
 
     <Button
         android:id="@+id/search_devices_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:src="@drawable/invisiblebutton"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
         android:layout_alignParentLeft="true"
+        android:layout_marginLeft="160dp"
+        android:layout_marginTop="390dp"
         android:text="@string/search_devices" />
 
-    <Button
-        android:id="@+id/invite_people_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/search_devices_button"
-        android:text="@string/invite_people" />
-    
-    <Button
-        android:id="@+id/bump_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/invite_people_button"
-        android:text="@string/bump_file"
-        />
 </RelativeLayout>
 </FrameLayout>

@@ -39,21 +39,7 @@ public class MainActivity extends Activity {
             	scanDevices();
         		}
         });
-		final Button invitePeopleButton = (Button) findViewById(R.id.invite_people_button);
-		invitePeopleButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-            	invitePeople();
-        		}
-        });
-		final Button bumpFileButton = (Button) findViewById(R.id.bump_button);
-		bumpFileButton.setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				Intent i = new Intent(MainActivity.this, BumpFileActivity.class);
-				startActivity(i);
-			}
-		});
+		scanButton.setAlpha(0);
 		ConnectToOwnMug();
 	}
 
@@ -77,6 +63,7 @@ public class MainActivity extends Activity {
 		menu.findItem(R.id.menu_refresh).setVisible(false);
 		menu.findItem(R.id.menu_scan).setVisible(false);
 		menu.findItem(R.id.menu_stop).setVisible(false);
+		menu.findItem(R.id.action_view_bump_file).setVisible(true);
 		return true;
 	}
 
@@ -93,6 +80,10 @@ public class MainActivity extends Activity {
             case R.id.action_set_own_mug:
             	Intent intent = new Intent(this, DeviceScanActivity.class);
             	startActivityForResult(intent, REQUEST_SET_OWN_MUG);
+            	break;
+            case R.id.action_view_bump_file:
+            	Intent intent2 = new Intent(MainActivity.this, BumpFileActivity.class);
+				startActivity(intent2);
             	break;
         }
         return true;

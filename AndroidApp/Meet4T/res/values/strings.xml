@@ -34,7 +34,7 @@
     <string name="show_people">Show people</string>
     <string name="invite">Invite</string>
     <string name="invite_people">Invite people</string>
-    <string name="bump_file">Bump file</string>
+    <string name="view_bump_file">View bump file</string>
     
 <!--     Random -->
 		<string name="main_bg">Main Activity Background</string>
