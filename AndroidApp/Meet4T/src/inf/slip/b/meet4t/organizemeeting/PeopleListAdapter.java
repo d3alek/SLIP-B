@@ -9,7 +9,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -137,16 +136,16 @@ public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
 		return pairs;
 	}
 
-	public String getMugIdsOfSelectedPeople() {
-		List<String> mugIDs = new ArrayList<String>();
+	public String getSelectedPeopleString() {
+		List<String> selectedPeople = new ArrayList<String>();
 		// Add invitees names to request body
 		for (PeopleListItem person : dataList) {
 			if (person.isSelected()) {
-				mugIDs.add(person.getMugID());
+				selectedPeople.add(person.getName() + ":" + person.getMugID());
 			}
 		}
-		if (mugIDs.size() > 0) {
-			return mugIDs.toString();
+		if (selectedPeople.size() > 0) {
+			return selectedPeople.toString();
 		}
 		return null;
 	}

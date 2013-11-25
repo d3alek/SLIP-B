@@ -1,10 +1,23 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
+    <item android:id="@+id/menu_BLE_on"
+          android:title="@string/disable_bluetooth"
+          android:icon="@drawable/bt_blue"
+          android:showAsAction="always"/>
+    <item android:id="@+id/menu_BLE_off"
+          android:title="@string/enable_bluetooth"
+          android:icon="@drawable/bt_grey"
+          android:showAsAction="always"/>
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/action_set_own_mug"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="@string/action_settings"/>
+        android:title="@string/action_set_own_mug"/>
+    <item
+        android:id="@+id/action_view_bump_file"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/view_bump_file"/>
     <item android:id="@+id/menu_refresh"
           android:title="@string/menu_refresh"
           android:checkable="false"
