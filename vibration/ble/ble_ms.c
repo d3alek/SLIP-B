@@ -230,7 +230,7 @@ uint32_t ble_ms_accepted_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
             
     err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
 
-    if ((err_code == NRF_SUCCESS) && (hvx_len != len))
+    if ((err_code == NRF_SUCCESS) && (hvx_len != encode_len))
         {
             err_code = NRF_ERROR_DATA_SIZE;
         }
@@ -279,7 +279,7 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
             
     err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
 
-    if ((err_code == NRF_SUCCESS) && (hvx_len != len))
+    if ((err_code == NRF_SUCCESS) && (hvx_len != encode_len))
         {
             err_code = NRF_ERROR_DATA_SIZE;
         }
@@ -292,7 +292,8 @@ uint32_t ble_ms_declined_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len
 uint32_t ble_ms_pending_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len)
 {
     uint32_t err_code = NRF_SUCCESS;
-char buf[30];
+    char buf[30];
+    
     //encoded string for GATT
     uint8_t encoded_ids[MAX_LEN * 16]; 
     
@@ -305,14 +306,11 @@ char buf[30];
                                           0,
                                           &len,
                                           encoded_ids);
-    if (err_code != NRF_SUCCESS)
-        {
-            return err_code;
-        }
+    if (err_code != NRF_SUCCESS){
+           simple_uart_putstring("Error setting characterisic\n");
+           return err_code;
+    }
         
-    sprintf((char*)buf, "ERROR 1: %lx\n", err_code);
-    simple_uart_putstring(buf);
-
     // Send updated value notification to android app
     ble_gatts_hvx_params_t hvx_params;
     uint16_t               hvx_len;
@@ -328,13 +326,10 @@ char buf[30];
             
     err_code = sd_ble_gatts_hvx(p_ms->conn_handle, &hvx_params);
 
-    if ((err_code == NRF_SUCCESS) && (hvx_len != len))
-        {
+    if ((err_code == NRF_SUCCESS) && (hvx_len != encode_len)){
             err_code = NRF_ERROR_DATA_SIZE;
-        }
-
-    sprintf((char*)buf, "ERROR 2: %lx\n", err_code);
-    simple_uart_putstring(buf);
+       
+    }
 
     return err_code;
 }

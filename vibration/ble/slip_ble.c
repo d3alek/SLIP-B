@@ -156,33 +156,49 @@ static void services_init(MUG_STATUS* mugs)
 //==================================================================
 //Dummy function for debugging accepted and declined Characteristics
 //==================================================================
-void set_replies(){
+void set_replies(int c){
   int acc_size = 3;
   int dec_size = 2;
   uint32_t err_code = NRF_SUCCESS;
   
-  uint64_t acc_id1 = 0x5b83092c6767bb6d;
-  uint64_t acc_id2 = 0xc5861596e2118c8d;
-  uint64_t acc_id3 = 0x32db4358f348ea3b;
-  uint64_t acc_ids[acc_size];
-  acc_ids[0] = acc_id1;
-  acc_ids[1] = acc_id2; 
-  acc_ids[2] = acc_id3;
+  uint64_t acc_id1 = 0xfeeb01234567beef;
+  uint64_t acc_id2 = 0xdeadbeefbeefdead;
+  uint64_t acc_id3 = 0xdeaddaedbeeffeeb;
+  uint64_t acc_ids[1];
+  // acc_ids[0] = acc_id1;
+  // acc_ids[1] = acc_id2; 
+  // acc_ids[2] = acc_id3;
 
-  simple_uart_putstring("BEFORE\n");
-char buf[30];
+  char buf[30];
 
+  
+  int i;
+  if(c < acc_size)
+     i = c;
+  else
+     i = c % acc_size;
+ 
+  if(i == 0){
+    acc_ids[0] = acc_id1;
+    simple_uart_putstring("SENDING ACK 1 TO APP\n");
+  }
+  else if(i==1){
+    acc_ids[0] = acc_id2;
+    simple_uart_putstring("SENDING ACK 2 TO APP\n");
+  }
+  else{
+    acc_ids[0] = acc_id3;
+    simple_uart_putstring("SENDING ACK 3 TO APP\n");
+  }
+   
+  err_code = ble_ms_pending_ids_update(&m_ms,acc_ids,1);
+  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING && err_code != 0){
 
-  err_code = ble_ms_pending_ids_update(&m_ms,acc_ids,acc_size);
-  if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
-
-    sprintf((char*)buf, "ERROR 3: %lx\n", err_code);
+    sprintf((char*)buf, "ERROR sending notification: %lx\n", err_code);
     simple_uart_putstring(buf);
-        APP_ERROR_CHECK(err_code);
+    APP_ERROR_CHECK(err_code);
   }
 
-
-  simple_uart_putstring("SET REPLIES\n");
 }
 
 
@@ -224,57 +240,44 @@ void RSVP_App(){
 
   uint32_t err_code = NRF_SUCCESS;
   int i;
-  //int acc_size =0;
-  //int dec_size =0;
+  char buf[30];
   int acked_size = 0;
+  uint64_t acked_ids[m_ms.mug_len];
 
-  //finds the number of accpeted and declined mugs
+  //populates list of acked mugs
   for(i=0;i<m_ms.mug_len;i++){
     if(m_ms.mugs[i].PIPELINE_STATUS == ON ||m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED ||m_ms.mugs[i].PIPELINE_STATUS == REJECTED ){
+             acked_ids[acked_size] = m_ms.mugs[i].MUG_ID;
              acked_size++;
        }
   }
 
- 
-  if (acked_size ==0 ){
+  if (acked_size == 0 ){
     simple_uart_putstring("NO IDS TO RETURN TO APP");
     return;
   }
 
-  uint64_t acked_ids[acked_size];
-  int ak =0;
-  char buf[30];
-  //populates lists of accepted and declined mugs
-  for(i=0;i<m_ms.mug_len;i++){
-    sprintf((char*)buf, "MUG %llX status %d\n",m_ms.mugs[i].MUG_ID,m_ms.mugs[i].PIPELINE_STATUS);
-    simple_uart_putstring(buf);
+  uint64_t curr_id[1];
 
-    if(m_ms.mugs[i].PIPELINE_STATUS == ON ||m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED ||m_ms.mugs[i].PIPELINE_STATUS == REJECTED ){
-       acked_ids[ak] = m_ms.mugs[i].MUG_ID;
-       sprintf((char*)buf, "ACKED %llX\n",acked_ids[ak]);
-       simple_uart_putstring(buf);
-       ak++;
-     
-      }
-  }
+  for(i=0;i<acked_size;i++){
+  
+     curr_id[0] = acked_ids[i];
+     sprintf((char*)buf, "RSVP MUG %llX\n",curr_id[0]);
+     simple_uart_putstring(buf);
 
-
-   err_code = ble_ms_pending_ids_update(&m_ms,acked_ids,acked_size);
-   if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
+     err_code = ble_ms_pending_ids_update(&m_ms,curr_id[0],1);
+     if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
         APP_ERROR_CHECK(err_code);
-   }
-
-
-  simple_uart_putstring("SENT RSVP\n");
+     }
+  }
 
   //Reset Mugs ids ready for next set of invitations   
   m_ms.mug_len = 0;
   m_ms.ready=0;
   memset(m_ms.mugs, 0, sizeof(m_ms.mugs)); //reset all mug ids to zero
-  simple_uart_putstring("MUG IDS RESET\n");
+  simple_uart_putstring("SENT RSVP\n");
  
-        
- 
+    
 }
 
 // //updates the bump chracteristic in GATT and notifies the client

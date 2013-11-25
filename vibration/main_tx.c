@@ -181,7 +181,7 @@ Function: initialize_all(void)
 	twi and vibration	
 
 ==============================================
- */
+*/
 static ble_ms_t* initialize_all()
 {
 	char buf[30];
@@ -211,11 +211,6 @@ static ble_ms_t* initialize_all()
 	twi_master_init(); 
 	simple_uart_putstring("DONE TWI MASTER INIT\n");
 		
-	// initialize vibration
-	simple_uart_putstring("INIT VIBRATION\n");
-	init_vibration();
-	simple_uart_putstring("INIT VIBRATION DONE\n");
-
 	// initialize temperature
 	nrf_temp_init();
 
@@ -225,7 +220,7 @@ static ble_ms_t* initialize_all()
 
 int main(){
 	
-
+    
     ble_ms_t* p_ms = initialize_all();
 	char buf[30];
 
@@ -236,11 +231,8 @@ int main(){
 	int8_t hasReachedTemperature = 0;
 	int8_t useTemperature = 0;
 	
-
-
-	bool radio_executed = false;
 	bool waitToConnectAndRSVP = false;
-
+    int ctr =0;
 	// main application loop
 	while (1) {
 	
@@ -252,10 +244,12 @@ int main(){
                   BLE DEBUG
          ==========================================*/
 		 if (is_connected() && waitToConnectAndRSVP) {
-		 	set_replies();
+		 	 set_replies(ctr);
+		 	 ctr++;
 		 }
+
          //All the mugs that will be invited have been set usig BLE
-		 if (is_ready() && !radio_executed) {
+		 if (is_ready()) {
 
 		 	//disconnect ble
             sd_ble_gap_disconnect(p_ms->conn_handle,0);
@@ -269,7 +263,6 @@ int main(){
 			simple_uart_putstring("Disabled soft device \n");
 			
 			// END - Deal with radios
-
 			bool disovery_complete = false;
 			bool all_final_state = true;
 			int8_t current_mug = 0;
@@ -327,7 +320,7 @@ int main(){
 					}
 					// Vibrate when water boils
 					else if (MUG_LIST[current_mug].PIPELINE_STATUS == ACCEPTED){
-				// TODO: && temperature > threshold
+			    	// TODO: && temperature > threshold
 						packet[0] = (uint64_t) 0xdede;
 						packet[1] = MUG_LIST[current_mug].MUG_ID;
 
@@ -359,20 +352,19 @@ int main(){
 
 		 	// Deal with radios
 	        sd_softdevice_enable(NRF_CLOCK_LFCLKSRC_RC_250_PPM_1000MS_CALIBRATION,app_error_handler);
+		   
 		    nrf_delay_ms(1000);
 	       	simple_uart_putstring("Enabled soft device\n");
 
 	       	//restart ble
 			start_ble(MUG_LIST);
 
-			radio_executed = true;
 			waitToConnectAndRSVP = true;
 			//RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
 
 		}		
 
 		debug_ble_ids();
-		// vibration_update();
 		app_sched_execute();
 		nrf_delay_ms(500);
 
