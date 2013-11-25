@@ -35,6 +35,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
@@ -60,7 +61,12 @@ public class DeviceControlActivity extends Activity {
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+	private static final long RECONNECT_ATTEMPT_INTERVAL = 10000;
+	
+	private static final String END_OF_MUG_QUEUE = "1111111111111111";
 
+
+	private Handler mHandler;
     private TextView mConnectionState;
     private TextView mDataField;
     private String mDeviceName;
@@ -115,11 +121,11 @@ public class DeviceControlActivity extends Activity {
                 mConnected = false;
                 updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
+                tryToReconnect();
                 clearUI();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(mBluetoothLeService.getSupportedGattServices());
-                
                 inviteNextMug();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	Log.i("Cat", "action data available");
@@ -173,6 +179,7 @@ public class DeviceControlActivity extends Activity {
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
 
+        mHandler = new Handler();
         // Sets up UI references.
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mGattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
@@ -257,6 +264,7 @@ public class DeviceControlActivity extends Activity {
     	if (extras.containsKey("invitees")){
     		String invitees = extras.getString("invitees");
     		mugQueue  = parseInviteesList(invitees);
+    		mugQueue.add(END_OF_MUG_QUEUE);
     		BluetoothGattService service = getServiceIWant();
     		if (service == null) {
     			Log.i("Cat", "service is null");
@@ -265,6 +273,22 @@ public class DeviceControlActivity extends Activity {
     	} else {
     		Toast.makeText(this, "Not inviting anyone?", Toast.LENGTH_LONG).show();
     	}
+    }
+
+    private void tryToReconnect() {
+    	if (mBluetoothLeService != null) {
+            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
+            Log.d(TAG, "Connect request result=" + result);
+            if (result) {
+            	return;
+            }
+        }
+    	mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+            	tryToReconnect();
+            }
+        }, RECONNECT_ATTEMPT_INTERVAL);
     }
 
     private ArrayList<String> parseInviteesList(String invitees) {
@@ -383,7 +407,7 @@ public class DeviceControlActivity extends Activity {
     		Log.i(TAG, "Can't see gatt service " + SERVICE_I_WANT);
     	}
     	else {
-    		Log.d("Cat", "My method found: " + gattService.getUuid());
+    		Log.d("Cat", "Found characteristic: " + gattService.getUuid());
     	}
     	if (gattService == null) {
         	return null;
@@ -417,9 +441,6 @@ public class DeviceControlActivity extends Activity {
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
-		        //nextMug = "1111111111111111";                
-			//c.setValue(nextMug);                         
-                        //mBluetoothLeService.writeCharacteristic(c);      
                }
     }
 
