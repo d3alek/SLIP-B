@@ -4,4 +4,5 @@ nrf51_sdk
 _build
 *.log
 AndroidApp/Meet4T/bin/*
+AndroidApp/Meet4T/gen/*
 

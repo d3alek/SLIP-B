@@ -2,6 +2,7 @@ package inf.slip.b.meet4t.main;
 
 import inf.slip.b.meet4t.R;
 import inf.slip.b.meet4t.bluetooth.BluetoothLeService;
+import inf.slip.b.meet4t.bluetooth.DeviceControlActivity;
 import inf.slip.b.meet4t.bluetooth.DeviceScanActivity;
 import inf.slip.b.meet4t.bump.BumpFileActivity;
 import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
@@ -193,7 +194,7 @@ public class MainActivity extends Activity {
 	}
 
 	private void invitePeople() {
-		Intent intent = new Intent(this, InvitePeopleActivity.class);
+		Intent intent = new Intent(this, DeviceControlActivity.class);
 		startActivity(intent);
 	}
 }

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 import android.app.Activity;
+import android.app.ListActivity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -38,10 +39,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.ListView;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,7 +55,7 @@ import android.widget.Toast;
  * communicates with {@code BluetoothLeService}, which in turn interacts with the
  * Bluetooth LE API.
  */
-public class DeviceControlActivity extends Activity {
+public class DeviceControlActivity extends ListActivity {
 	private final static String SERVICE_I_WANT = "00001523-1212-efde-1523-785feabcd123";
 	private final static String PENDING_CHARACTERISTIC = "00001526-1212-efde-1523-785feabcd123";
 	private final static String AVAILABLE_CHARACTERISTIC = "00001524-1212-efde-1523-785feabcd123";
@@ -64,10 +67,11 @@ public class DeviceControlActivity extends Activity {
 	private static final long RECONNECT_ATTEMPT_INTERVAL = 10000;
 	
 	private static final String END_OF_MUG_QUEUE = "1111111111111111";
+	private static final int REQUEST_INVITEES = 3;
 
 
 	private Handler mHandler;
-    private TextView mConnectionState;
+//    private TextView mConnectionState;
     private TextView mDataField;
     private String mDeviceName;
     private String mDeviceAddress;
@@ -81,6 +85,8 @@ public class DeviceControlActivity extends Activity {
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
 
+    private StatusListAdapter adapter;
+
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -90,6 +96,9 @@ public class DeviceControlActivity extends Activity {
             if (!mBluetoothLeService.initialize()) {
                 Log.e(TAG, "Unable to initialize Bluetooth");
                 finish();
+            }
+            else {
+            	Log.i("Cat", "Bluetooth initialized");
             }
             // Automatically connects to the device upon successful start-up initialization.
             mBluetoothLeService.connect(mDeviceAddress);
@@ -114,18 +123,18 @@ public class DeviceControlActivity extends Activity {
         	Log.i("Cat", "action: " + action);
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
-                updateConnectionState(R.string.connected);
+//                updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
-                displayGattServices(mBluetoothLeService.getSupportedGattServices());
+//                displayGattServices(mBluetoothLeService.getSupportedGattServices());
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
-                updateConnectionState(R.string.disconnected);
+//                updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
-                tryToReconnect();
+//                tryToReconnect();
                 clearUI();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
-                displayGattServices(mBluetoothLeService.getSupportedGattServices());
+//                displayGattServices(mBluetoothLeService.getSupportedGattServices());
                 inviteNextMug();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	Log.i("Cat", "action data available");
@@ -145,48 +154,31 @@ public class DeviceControlActivity extends Activity {
             }
         }
     };
-  
-    // If a given GATT characteristic is selected, check for supported features.  This sample
-    // demonstrates 'Read' and 'Notify' features.  See
-    // http://d.android.com/reference/android/bluetooth/BluetoothGatt.html for the complete
-    // list of supported characteristic features.
-    private final ExpandableListView.OnChildClickListener servicesListClickListner =
-            new ExpandableListView.OnChildClickListener() {
-                @Override
-                public boolean onChildClick(ExpandableListView parent, View v, int groupPosition,
-                                            int childPosition, long id) {
-                    if (mGattCharacteristics != null) {
-                        final BluetoothGattCharacteristic characteristic =
-                                mGattCharacteristics.get(groupPosition).get(childPosition);
-                        inviteNextMug();
-                        return true;
-                    }
-                    return false;
-                }
-    };
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int  position, long id) {
+    	StatusListItem item = (StatusListItem) adapter.getItem(position);
+    	Toast.makeText(this, item.getMugID(), Toast.LENGTH_SHORT).show();
+    }
+
 
     private void clearUI() {
-        mGattServicesList.setAdapter((SimpleExpandableListAdapter) null);
-        mDataField.setText(R.string.no_data);
+//        mGattServicesList.setAdapter((SimpleExpandableListAdapter) null);
+//        mDataField.setText(R.string.no_data);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.gatt_services_characteristics);
-
+        setContentView(R.layout.activity_control_device);
+        adapter = new StatusListAdapter(getLayoutInflater(), getPeople(null));
+        getListView().setAdapter(adapter);
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
 
+//        mConnectionState = (TextView) findViewById(R.id.connection_state);
         mHandler = new Handler();
-        // Sets up UI references.
-        ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
-        mGattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
-        mGattServicesList.setOnChildClickListener(servicesListClickListner);
-        mConnectionState = (TextView) findViewById(R.id.connection_state);
-        mDataField = (TextView) findViewById(R.id.data_value);
-
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
@@ -245,13 +237,12 @@ public class DeviceControlActivity extends Activity {
         }
         return super.onOptionsItemSelected(item);
     }
-
-    private int requestCode = 1;
 	private ArrayList<String> mugQueue;
+	private ArrayList<Pair<String,String>> inviteesList;
 
     private void invitePeople(){
     	Intent intent = new Intent(this, InvitePeopleActivity.class);
-    	startActivityForResult(intent, requestCode);
+    	startActivityForResult(intent, REQUEST_INVITEES);
     }
  
     @Override
@@ -260,18 +251,31 @@ public class DeviceControlActivity extends Activity {
     	if (resultCode != RESULT_OK) {
     		return;
     	}
-    	Bundle extras = data.getExtras();
-    	if (extras.containsKey("invitees")){
-    		String invitees = extras.getString("invitees");
-    		mugQueue  = parseInviteesList(invitees);
-    		mugQueue.add(END_OF_MUG_QUEUE);
-    		BluetoothGattService service = getServiceIWant();
-    		if (service == null) {
-    			Log.i("Cat", "service is null");
-    			return;
-    		};
-    	} else {
-    		Toast.makeText(this, "Not inviting anyone?", Toast.LENGTH_LONG).show();
+    	try {
+    		if (requestCode == REQUEST_INVITEES) {
+    		Bundle extras = data.getExtras();
+    		if (extras.containsKey("invitees")){
+    			Toast.makeText(this, "intent has extras", Toast.LENGTH_SHORT).show();
+    			Log.d("Cat", "intent has extras: ");
+    			String invitees = extras.getString("invitees");
+    			Log.d("Cat", invitees);
+    			Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
+    			inviteesList = getPeople(invitees);
+    			Log.d(TAG, "HEYA + " + inviteesList.size());
+    			mugQueue = getMugs(inviteesList);
+    			mugQueue.add(END_OF_MUG_QUEUE);
+    			try {
+    			adapter.addItems(inviteesList);
+    			adapter.notifyDataSetChanged();
+    			} catch (Exception e) {
+    	    		Toast.makeText(this, "adapter exception", Toast.LENGTH_LONG).show();
+    	    	}
+    		} else {
+    			Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_LONG).show();
+    		}
+    	}
+    	} catch (Exception e) {
+    		Toast.makeText(this, "exception", Toast.LENGTH_LONG).show();
     	}
     }
 
@@ -280,6 +284,7 @@ public class DeviceControlActivity extends Activity {
             final boolean result = mBluetoothLeService.connect(mDeviceAddress);
             Log.d(TAG, "Connect request result=" + result);
             if (result) {
+            	Log.d("Cat", "Reconnected to the device");
             	return;
             }
         }
@@ -290,97 +295,30 @@ public class DeviceControlActivity extends Activity {
             }
         }, RECONNECT_ATTEMPT_INTERVAL);
     }
-
-    private ArrayList<String> parseInviteesList(String invitees) {
-    	invitees = invitees.substring(1, invitees.length() - 1);
-		ArrayList<String> result = new ArrayList<String>(Arrays.asList(invitees.split(", ")));
-		return result;
+    
+    private ArrayList<Pair<String, String>> getPeople(String invitees) {
+		if (invitees == null) {
+			ArrayList<Pair<String,String>> c =  new ArrayList<Pair<String,String>>();
+			c.add(new Pair<String, String>("Name", "Mug"));
+			return c;
+			
+		}
+		invitees = invitees.substring(1, invitees.length() - 1);
+		String[] nameAndMug = invitees.split(", ");
+		ArrayList<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
+		for (String pair : nameAndMug) {
+			String[] splittedPair = pair.split(":");
+			pairs.add(new Pair<String, String>(splittedPair[0], splittedPair[1]));
+		}
+		return pairs;
 	}
-
-	private BluetoothGattService getServiceIWant(){
-    	return mBluetoothLeService.getServiceByUuid(SERVICE_I_WANT);
-    }
-
-    private void updateConnectionState(final int resourceId) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mConnectionState.setText(resourceId);
-            }
-        });
-    }
-
-    // Demonstrates how to iterate through the supported GATT Services/Characteristics.
-    // In this sample, we populate the data structure that is bound to the ExpandableListView
-    // on the UI.
-    private boolean displayGattServices(List<BluetoothGattService> gattServices) {
-        if (gattServices == null) {
-        	Toast.makeText(this, "gattServices is null", Toast.LENGTH_LONG).show();
-        	return false;
-        }
-        String uuid = null;
-        String serviceUuid = null;
-        String unknownServiceString = getResources().getString(R.string.unknown_service);
-        String unknownCharaString = getResources().getString(R.string.unknown_characteristic);
-        ArrayList<HashMap<String, String>> gattServiceData = new ArrayList<HashMap<String, String>>();
-        ArrayList<ArrayList<HashMap<String, String>>> gattCharacteristicData
-                = new ArrayList<ArrayList<HashMap<String, String>>>();
-        mGattCharacteristics = new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
-        boolean foundIt = false;
-
-        // Loops through available GATT Services.
-        for (BluetoothGattService gattService : gattServices) {
-            HashMap<String, String> currentServiceData = new HashMap<String, String>();
-            serviceUuid = gattService.getUuid().toString();
-            if (serviceUuid.equals(SERVICE_I_WANT)){
-            	Log.i(TAG, "SERVICE I WANT FOUND");
-            	foundIt = true;
-            }
-            currentServiceData.put(
-                    LIST_NAME, SampleGattAttributes.lookup(serviceUuid, unknownServiceString));
-            currentServiceData.put(LIST_UUID, serviceUuid);
-            gattServiceData.add(currentServiceData);
-
-            ArrayList<HashMap<String, String>> gattCharacteristicGroupData =
-                    new ArrayList<HashMap<String, String>>();
-            List<BluetoothGattCharacteristic> gattCharacteristics =
-                    gattService.getCharacteristics();
-            ArrayList<BluetoothGattCharacteristic> charas =
-                    new ArrayList<BluetoothGattCharacteristic>();
-
-            // Loops through available Characteristics.
-            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
-               	Log.i(TAG, "Looping over gattCharacteristics for the service " + uuid);
-                charas.add(gattCharacteristic);
-                HashMap<String, String> currentCharaData = new HashMap<String, String>();
-                uuid = gattCharacteristic.getUuid().toString();
-                currentCharaData.put(
-                        LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
-                currentCharaData.put(LIST_UUID, uuid);
-                gattCharacteristicGroupData.add(currentCharaData);
-                if (uuid.equals(PENDING_CHARACTERISTIC)) {
-                	mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
-                }
-            }
-            mGattCharacteristics.add(charas);
-
-            gattCharacteristicData.add(gattCharacteristicGroupData);
-            
-        }
-
-        SimpleExpandableListAdapter gattServiceAdapter = new SimpleExpandableListAdapter(
-                this,
-                gattServiceData,
-                android.R.layout.simple_expandable_list_item_2,
-                new String[] {LIST_NAME, LIST_UUID},
-                new int[] { android.R.id.text1, android.R.id.text2 },
-                gattCharacteristicData,
-                android.R.layout.simple_expandable_list_item_2,
-                new String[] {LIST_NAME, LIST_UUID},
-                new int[] { android.R.id.text1, android.R.id.text2 }
-        );
-        mGattServicesList.setAdapter(gattServiceAdapter);
-        return foundIt;
+    
+    private ArrayList<String> getMugs(ArrayList<Pair<String, String>> people) {
+    	ArrayList<String> mugs = new ArrayList<String> ();
+    	for (Pair<String, String> pair : people) {
+    		mugs.add(pair.second);
+    	}
+    	return mugs;
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {

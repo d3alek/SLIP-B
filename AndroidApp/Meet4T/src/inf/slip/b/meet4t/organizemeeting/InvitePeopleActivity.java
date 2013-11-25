@@ -21,16 +21,18 @@ public class InvitePeopleActivity extends ListActivity {
 			final Button invitePeopleButton = (Button) findViewById(R.id.invite_people);
 			invitePeopleButton.setOnClickListener(new View.OnClickListener() {
 	            public void onClick(View v) {
-	            	invitePeople(adapter.getMugIdsOfSelectedPeople());
+	            	invitePeople(adapter.getSelectedPeopleString());
 	        		}
 	        });
 			getListView().setAdapter(adapter);
 
 		}
 
-		private void invitePeople(String listOfMugIDs) {
+		private void invitePeople(String selectedPeople) {
 			Intent i = getIntent();
-			i.putExtra("invitees", listOfMugIDs);
+			if (selectedPeople != null) {
+				i.putExtra("invitees", selectedPeople);
+			}
 			setResult(RESULT_OK, i);
 			finish();
 		}
