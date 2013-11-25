@@ -66,6 +66,7 @@ public class DeviceScanActivity extends ListActivity {
             finish();
         }
 
+        getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
         final BluetoothManager bluetoothManager =
@@ -81,8 +82,16 @@ public class DeviceScanActivity extends ListActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	menu.removeItem(R.id.menu_BLE_on);
+    	menu.removeItem(R.id.menu_BLE_off);
         if (!mScanning) {
             menu.findItem(R.id.menu_stop).setVisible(false);
             menu.findItem(R.id.menu_scan).setVisible(true);
@@ -148,16 +157,23 @@ public class DeviceScanActivity extends ListActivity {
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
-        if (device == null) return;
-        final Intent intent = new Intent(this, DeviceControlActivity.class);
-        intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
-        intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
-        if (mScanning) {
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-            mScanning = false;
-        }
-        startActivity(intent);
+    	if (getCallingActivity() != null) {
+    		Intent i = getIntent();
+			i.putExtra(getString(R.string.own_mug), mLeDeviceListAdapter.getDevice(position).getAddress());
+			setResult(RESULT_OK, i);
+			finish();
+    	} else {
+    		final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
+    		if (device == null) return;
+    		final Intent intent = new Intent(this, DeviceControlActivity.class);
+    		intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
+    		intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+    		if (mScanning) {
+    			mBluetoothAdapter.stopLeScan(mLeScanCallback);
+    			mScanning = false;
+    		}
+    		startActivity(intent);
+    	}
     }
 
     private void scanLeDevice(final boolean enable) {
