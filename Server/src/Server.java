@@ -231,9 +231,16 @@ public class Server
 			List<String> names = DB.GetNamesByCupIds(DB.GetAllCupIds());
 			
 			// create the message using all the strings within the list
-			String response = names.get(0);
+			String curName = names.get(0);
+			final StringBuilder upName = new StringBuilder(curName.length());
+				upName.append(Character.toUpperCase(curName.charAt(0))).append(curName.substring(1));
+
+			String response = ""+upName;
 			for (int i = 1; i < names.size(); i++) {
-				response = response + ", " + names.get(i);
+				String currentName = names.get(i);
+				final StringBuilder upperName = new StringBuilder(currentName.length());
+				upperName.append(Character.toUpperCase(currentName.charAt(0))).append(currentName.substring(1));
+				response = response + ", " + upperName;
 			}
 			
 			// send the response
@@ -274,9 +281,16 @@ public class Server
 			}
 			
 			// create the message using all the strings within the list
-			String response = names.get(0);
+			String curName = names.get(0);
+			final StringBuilder upName = new StringBuilder(curName.length());
+				upName.append(Character.toUpperCase(curName.charAt(0))).append(curName.substring(1));
+
+			String response = "" + upName;
 			for (int i = 1; i < names.size(); i++) {
-				response = response + ", " + names.get(i);
+				String currentName = names.get(i);
+				final StringBuilder upperName = new StringBuilder(currentName.length());
+				upperName.append(Character.toUpperCase(currentName.charAt(0))).append(currentName.substring(1));
+				response = response + ", " + upperName;
 			}
 			
 			// send the response
