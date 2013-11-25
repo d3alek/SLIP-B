@@ -318,7 +318,6 @@ public class DeviceControlActivity extends Activity {
         	Toast.makeText(this, "gattServices is null", Toast.LENGTH_LONG).show();
         	return false;
         }
-        //Toast.makeText(this, "gattServices is NOT null, len: " + gattServices.size(), Toast.LENGTH_LONG).show();
         String uuid = null;
         String serviceUuid = null;
         String unknownServiceString = getResources().getString(R.string.unknown_service);
@@ -359,8 +358,7 @@ public class DeviceControlActivity extends Activity {
                         LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
                 currentCharaData.put(LIST_UUID, uuid);
                 gattCharacteristicGroupData.add(currentCharaData);
-//                if (serviceUuid.equals(SERVICE_I_WANT)) {
-                if (uuid.equals("00001526-1212-efde-1523-785feabcd123")) {
+                if (uuid.equals(PENDING_CHARACTERISTIC)) {
                 	mBluetoothLeService.setCharacteristicNotification(gattCharacteristic, true);
                 }
             }
@@ -415,6 +413,9 @@ public class DeviceControlActivity extends Activity {
         return gattService.getCharacteristic(UUID.fromString(PENDING_CHARACTERISTIC));
     }
 
+    /**
+     * Returns the id of the next mug, and removes it from the queue. Returns null if there is no mug to invite.
+     */
     private String getNextMug() {
     	if (mugQueue.size() >= 1) {
     		return mugQueue.remove(0);
@@ -422,13 +423,14 @@ public class DeviceControlActivity extends Activity {
     	return null;
     }
 
+    /**
+     * Sets the Pending characteristic to the id of the next mug to be invited.
+     */
     private void inviteNextMug() {
     	BluetoothGattCharacteristic c = getPendingCharacteristic();
     	if (c == null) {
     		Log.i(TAG, "inviteNextMug characteristic is null");
     		return;
-    	} else {
-    		Log.d("Cat", "Setting characteristic: " + c.getUuid().toString());
     	}
     	c.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
 		String nextMug = getNextMug();
@@ -436,20 +438,11 @@ public class DeviceControlActivity extends Activity {
 		if(nextMug != null) {
 			nextMug = nextMug + "0000000000000000".substring(nextMug.length());
 			c.setValue(nextMug);
-    		Log.d("Cat", "String value before writing:  " + c.getStringValue(0));
     		mBluetoothLeService.writeCharacteristic(c);
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
                }
     }
-
-//    private void notify(BluetoothGattCharacteristic c) {
-//    	final int charaProp = c.getProperties();
-//    	if  ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-//          mNotifyCharacteristic = c;
-//          mBluetoothLeService.setCharacteristicNotification(c, true);
-//    	}
-//    }
 }
 
