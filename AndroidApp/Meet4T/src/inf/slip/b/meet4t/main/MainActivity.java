@@ -14,7 +14,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.StrictMode;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,25 +32,6 @@ public class MainActivity extends Activity {
 		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitNetwork().build();
 		StrictMode.setThreadPolicy(policy);
 		setContentView(R.layout.activity_main);
-		final Button enableButton = (Button) findViewById(R.id.enable_button);
-		enableButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-            	enableBLE();
-        		}
-        });
-		final Button disableButton = (Button) findViewById(R.id.disable_button);
-		disableButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-            	disableBLE();
-        		}
-        });
-		if (BLEenabled()) {
-			enableButton.setVisibility(View.INVISIBLE);
-			disableButton.setVisibility(View.VISIBLE);
-		} else {
-			enableButton.setVisibility(View.VISIBLE);
-			disableButton.setVisibility(View.INVISIBLE);
-		}
 		final Button scanButton = (Button) findViewById(R.id.search_devices_button);
 		scanButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -157,8 +137,6 @@ public class MainActivity extends Activity {
 				bleNotification(R.string.ble_disable_fail);
 			}
 		}
-		findViewById(R.id.enable_button).setVisibility(View.VISIBLE);
-		findViewById(R.id.disable_button).setVisibility(View.INVISIBLE);
 	}
 
 	private boolean BLEenabled() {
@@ -182,8 +160,6 @@ public class MainActivity extends Activity {
     	}
     	if (requestCode == REQUEST_ENABLE_BT) {
     		if (BLEenabled()) {
-    			findViewById(R.id.enable_button).setVisibility(View.INVISIBLE);
-    			findViewById(R.id.disable_button).setVisibility(View.VISIBLE);
     			invalidateOptionsMenu();
     		}
     	}
