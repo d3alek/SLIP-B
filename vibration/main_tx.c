@@ -243,9 +243,9 @@ int main(){
                   BLE DEBUG
          ==========================================*/
 		 if (is_connected() && waitToConnectAndRSVP) {
-		 	  set_replies(ctr);
-		 	  ctr++;
-		 //	 RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
+		 	//  set_replies(ctr);
+		 //	  ctr++;
+		 	 RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
              //waitToConnectAndRSVP
 		 }
 
@@ -268,7 +268,8 @@ int main(){
 			bool all_final_state = true;
 			int8_t current_mug = 0;
 
-		 	while (!disovery_complete){
+		 	while (!disovery_complete && ctr < 120){
+		 		ctr ++;
 		 		if (MUG_LIST[current_mug].MUG_ID != 0){
 		 			// sprintf((char*)buf, "Checking : %d %llx\n",  current_mug, MUG_LIST[current_mug].MUG_ID);
 		 			// simple_uart_putstring(buf);
@@ -292,7 +293,7 @@ int main(){
 								simple_uart_putstring(buf);
 							}
 						} else {
-							sprintf((char*)buf, "ERROR : %llx %llx\n",  packet[0], packet[1]);
+							sprintf((char*)buf, "%d ERROR : %llx %llx \n",ctr,  packet[0], packet[1]);
 							simple_uart_putstring(buf);
 							simple_uart_putstring("Mug is OFF\n");
 							MUG_LIST[current_mug].PIPELINE_STATUS = OFF;

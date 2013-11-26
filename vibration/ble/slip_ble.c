@@ -236,6 +236,20 @@ ble_ms_t* start_ble(MUG_STATUS* mug_list, int first_call)
 
 }
 
+static void mugs_reset(){
+  int i;
+  for(i=0;i<m_ms.mug_len;i++){
+     m_ms.mugs[i].MUG_ID = 0;
+     m_ms.mugs[i].PIPELINE_STATUS = 0;
+
+  }
+
+
+  m_ms.mug_len = 0;
+   m_ms.ready=0;
+
+}
+
 //Sends accpeted and rejected mug ids to the app
 //Then resets muss struct
 void RSVP_App(){
@@ -254,7 +268,7 @@ void RSVP_App(){
   for(i=0;i<m_ms.mug_len;i++){
      sprintf((char*)buf, "MUG %llX STATUS %d\n",m_ms.mugs[i].MUG_ID,m_ms.mugs[i].PIPELINE_STATUS);
      simple_uart_putstring(buf);
-    if(m_ms.mugs[i].PIPELINE_STATUS == ON ||m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED ||m_ms.mugs[i].PIPELINE_STATUS == REJECTED||m_ms.mugs[i].PIPELINE_STATUS == INVITED ){
+     if(m_ms.mugs[i].PIPELINE_STATUS == ON ||m_ms.mugs[i].PIPELINE_STATUS == ACCEPTED ||m_ms.mugs[i].PIPELINE_STATUS == REJECTED||m_ms.mugs[i].PIPELINE_STATUS == INVITED ){
              acked_ids[acked_size] = m_ms.mugs[i].MUG_ID;
              acked_size++;
        }
@@ -273,16 +287,15 @@ void RSVP_App(){
      sprintf((char*)buf, "RSVP MUG %llX\n",curr_id[0]);
      simple_uart_putstring(buf);
 
-     err_code = ble_ms_pending_ids_update(&m_ms,curr_id[0],1);
+    
+     err_code = ble_ms_pending_ids_update(&m_ms,curr_id,1);
      if(err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING){
         APP_ERROR_CHECK(err_code);
      }
   }
 
   //Reset Mugs ids ready for next set of invitations   
-  // m_ms.mug_len = 0;
-  // m_ms.ready=0;
-  // memset(m_ms.mugs, 0, sizeof(m_ms.mugs)); //reset all mug ids to zero
+  //mugs_reset();
   simple_uart_putstring("SENT RSVP\n");
  
     
