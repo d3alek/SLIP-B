@@ -85,9 +85,9 @@ uint32_t ble_ms_init(ble_ms_t * p_ms, const ble_ms_init_t * p_ms_init, MUG_STATU
     uint32_t   err_code;
     ble_uuid_t ble_uuid;
 
-    // Initialize service structure
-    p_ms->mug_len = 0; 
-    p_ms->ready =0;                      
+      //  p_ms->mug_len = 0; 
+        p_ms->ready =0;        
+                  
     p_ms->conn_handle       = BLE_CONN_HANDLE_INVALID;
     p_ms->pending_write_handler = p_ms_init->pending_write_handler;
     p_ms->mugs = mugs;
@@ -173,7 +173,7 @@ static uint8_t id_encode(uint64_t* ids, uint8_t num_ids, uint8_t * encoded_buffe
     uint8_t len =0;  //length of encoded buffer
     int i,j;
     for(i=0;i< num_ids; i++){ //loops over each 64 bit ID 
-      for(j=7;j>0;j--){       //loops over each 8 bit in the encoded buffer
+      for(j=7;j>=0;j--){       //loops over each 8 bit in the encoded buffer
        encoded_buffer[(i*8)+j] = (uint8_t) ((ids[i] & (((uint64_t)0xFF)<< j*8)) >> (j*8));
        len++;
       }
@@ -295,6 +295,8 @@ uint32_t ble_ms_pending_ids_update(ble_ms_t * p_ms, uint64_t* ids, uint16_t len)
     //encode the ids and return the length of encoding
     uint8_t encode_len = id_encode(ids,len,encoded_ids);
    
+    sprintf((char*)buf, "ID : %llX len: %d\n",ids[0],encode_len);
+    simple_uart_putstring(buf);
         
     //Update GATT database with new declied characterisic
     err_code = sd_ble_gatts_value_set(p_ms->pending_char_handles.value_handle,

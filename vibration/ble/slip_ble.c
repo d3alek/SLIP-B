@@ -160,9 +160,9 @@ void set_replies(int c){
   int dec_size = 2;
   uint32_t err_code = NRF_SUCCESS;
   
-  uint64_t acc_id1 = 0xfeeb01234567beef;
-  uint64_t acc_id2 = 0xdeadbeefbeefdead;
-  uint64_t acc_id3 = 0xdeaddaedbeeffeeb;
+  uint64_t acc_id1 = 0x1234567890123456;
+  uint64_t acc_id2 = 0xabcdefabcdefabcd;
+  uint64_t acc_id3 = 0xa1b2c3d4e5f6a1b2;
   uint64_t acc_ids[1];
   // acc_ids[0] = acc_id1;
   // acc_ids[1] = acc_id2; 
@@ -182,7 +182,7 @@ void set_replies(int c){
     simple_uart_putstring("SENDING ACK 1 TO APP\n");
   }
   else if(i==1){
-    acc_ids[0] = acc_id2;
+    acc_ids[0] = acc_id2; 
     simple_uart_putstring("SENDING ACK 2 TO APP\n");
   }
   else{
@@ -224,8 +224,10 @@ void debug_ble_ids(){
 /**@brief Function for initialising ble
  */
 ble_ms_t* start_ble(MUG_STATUS* mug_list, int first_call)
-{
+{ char buf[30];
     
+  sprintf((char*)buf, "START first call %d\n",first_call);
+  simple_uart_putstring(buf);
       
     ble_setup(&m_ms,mug_list,first_call);
    
