@@ -15,7 +15,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-public class StatusListAdapter extends BaseAdapter implements OnClickListener {
+public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*/ {
 
 	/** The inflator used to inflate the XML layout */
 	private LayoutInflater inflator;
@@ -53,9 +53,6 @@ public class StatusListAdapter extends BaseAdapter implements OnClickListener {
 		// We only create the view if its needed
 		if (view == null) {
 			view = inflator.inflate(R.layout.device_ack_list_item, null);
-
-			// Set the click listener for the checkbox
-			view.findViewById(R.id.invitee).setOnClickListener(this);
 		}
 
 		StatusListItem data = (StatusListItem) getItem(position);
@@ -94,11 +91,11 @@ public class StatusListAdapter extends BaseAdapter implements OnClickListener {
 		return view;
 	}
 
-	@Override
-	public void onClick(View view) {
-		StatusListItem data = (StatusListItem) view.getTag();
-		Log.d("Cat", "clicked " + data.getName());
-	}
+//	@Override
+//	public void onClick(View view) {
+//		StatusListItem data = (StatusListItem) view.getTag();
+//		Log.d("Cat", "clicked " + data.getName());
+//	}
 
 	public StatusListItem getItemById(String mugID) {
 		for (StatusListItem item : dataList) {

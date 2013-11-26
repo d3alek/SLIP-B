@@ -163,10 +163,14 @@ public class DeviceControlActivity extends ListActivity {
     protected void onListItemClick(ListView l, View view, int  position, long id) {
     	StatusListItem item = (StatusListItem) adapter.getItem(position);
     	Toast.makeText(this, item.getMugID(), Toast.LENGTH_SHORT).show();
-//    	item.setMugStatus(MugStatus.ACCEPTED);
+    	if (item.getMugStatus() == MugStatus.NOT_YET_INVITED) {
+    		item.setMugStatus(MugStatus.ACCEPTED);
+    	} else {
+    		item.setMugStatus(MugStatus.NOT_YET_INVITED);
+    	}
 //    	view.findViewById(R.id.not_invited_yet).setVisibility(View.INVISIBLE);
 //    	view.findViewById(R.id.invited_accepted).setVisibility(View.VISIBLE);
-//    	adapter.notifyDataSetChanged();
+    	adapter.notifyDataSetChanged();
 //    	adapter.receivedAccept(item.getMugID());
     }
 
@@ -396,7 +400,16 @@ public class DeviceControlActivity extends ListActivity {
     private void getConfirmation() {
     	BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
 //    	mBluetoothLeService.readCharacteristic(characteristic);
-    	String value = getStringFromByte(characteristic.getValue());
+//    	String value = getStringFromByte(characteristic.getValue());
+    	String value = "" 
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 4)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 3)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7)
+    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6);
     	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
     }
 
