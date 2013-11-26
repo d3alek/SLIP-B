@@ -21,6 +21,7 @@ import inf.slip.b.meet4t.bluetooth.StatusListItem.MugStatus;
 import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
 
 import android.app.ListActivity;
@@ -84,6 +85,8 @@ public class DeviceControlActivity extends ListActivity {
     private StatusListAdapter adapter;
 
     private boolean waitingConfirmations = false;
+
+	private Toast confirmationToast;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -180,6 +183,7 @@ public class DeviceControlActivity extends ListActivity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        confirmationToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
         invitePeople();
     }
 
@@ -235,6 +239,7 @@ public class DeviceControlActivity extends ListActivity {
         return super.onOptionsItemSelected(item);
     }
 	private ArrayList<String> mugQueue;
+	private ArrayList<String> mugQueue2;
 	private ArrayList<Pair<String,String>> inviteesList;
 	private Toast currentToast;
 
@@ -254,13 +259,12 @@ public class DeviceControlActivity extends ListActivity {
     		Bundle extras = data.getExtras();
     		if (extras.containsKey("invitees")){
     			String invitees = extras.getString("invitees");
-    			Log.d("Cat", invitees);
     			Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
     			inviteesList = getPeople(invitees);
-    			Log.d(TAG, "HEYA + " + inviteesList.size());
     			mugQueue = getMugs(inviteesList);
     			mugQueue.add(END_OF_MUG_QUEUE);
-    			mugQueue.add(END_OF_MUG_QUEUE);
+    			mugQueue2 = getMugs(inviteesList);
+    			mugQueue2.add(END_OF_MUG_QUEUE);
     			try {
     			adapter.addItems(inviteesList);
     			adapter.notifyDataSetChanged();
@@ -282,7 +286,7 @@ public class DeviceControlActivity extends ListActivity {
             public void run() {
             	if (mBluetoothLeService != null) {
                     final boolean result = mBluetoothLeService.connect(mDeviceAddress);
-                    Log.d(TAG, "Connect request result=" + result);
+                    Log.d(TAG, "Connect request result = " + result);
                     if (result) {
                     	Log.d("Cat", "Reconnected to the device");
                     	return;
@@ -355,6 +359,9 @@ public class DeviceControlActivity extends ListActivity {
     	if (mugQueue.size() >= 1) {
     		return mugQueue.remove(0);
     	}
+//    	if (mugQueue2.size() >= 1) {
+//    		return mugQueue2.remove(0);
+//    	}
     	return null;
     }
 
@@ -378,7 +385,7 @@ public class DeviceControlActivity extends ListActivity {
 		} else {
 			waitingConfirmations = true;
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
-               }
+		}
     }
 
     Runnable sendEOQlater = new Runnable() {
@@ -400,10 +407,14 @@ public class DeviceControlActivity extends ListActivity {
     		mHandler.postDelayed(sendEOQlater, RESEND_ATTEMPT_INTERVAL);
     	} else {
     		String confirmedMug = value.replaceAll(" ", "");
+    		confirmedMug = confirmedMug.toLowerCase();
     		Log.d("Cat", "Confirmed mug: " + confirmedMug);
     		confirmListItem(confirmedMug);
     	}
-    	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
+//    	confirmationToast.cancel();
+//    	confirmationToast.setText("Received confirmation for: " + value);
+//    	confirmationToast.show();
+//    	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
     }
 
 
