@@ -198,16 +198,14 @@ static ble_ms_t* initialize_all()
 	simple_uart_putstring("INIT\n");
 	
 	// initiliaze radio
-	simple_uart_putstring("RADIO INIT\n");
     radio_configure(); 
     simple_uart_putstring("DONE RADIO INIT\n");
 
 	// initialize bluetooth
-	ble_ms_t* p_ms = start_ble(MUG_LIST); 
+	ble_ms_t* p_ms = start_ble(MUG_LIST,true); 
 	simple_uart_putstring("BLUETOOTH STARTED\n");
 		
 	// initialize twi
-	simple_uart_putstring("TWI MASTER INIT\n");
 	twi_master_init(); 
 	simple_uart_putstring("DONE TWI MASTER INIT\n");
 		
@@ -357,7 +355,7 @@ int main(){
 	       	simple_uart_putstring("Enabled soft device\n");
 
 	       	//restart ble
-			start_ble(MUG_LIST);
+			start_ble(MUG_LIST,false);
 
 			waitToConnectAndRSVP = true;
 			//RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 

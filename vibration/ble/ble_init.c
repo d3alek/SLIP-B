@@ -1,3 +1,4 @@
+#include "ble/ble_ms.h"
 #include "slip_ble.h"
 
 #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
@@ -25,7 +26,6 @@
 #define APP_GPIOTE_MAX_USERS            1                                           /**< Maximum number of users of the GPIOTE handler. */
 
 #define BUTTON_DETECTION_DELAY          APP_TIMER_TICKS(50, APP_TIMER_PRESCALER)    /**< Delay from a GPIOTE event until a button is reported as pushed (in number of timer ticks). */
-
 #define SEC_PARAM_TIMEOUT               30                                          /**< Timeout for Pairing Request or Security Request (in seconds). */
 #define SEC_PARAM_BOND                  1                                           /**< Perform bonding. */
 #define SEC_PARAM_MITM                  0                                           /**< Man In The Middle protection not required. */
@@ -33,7 +33,6 @@
 #define SEC_PARAM_OOB                   0                                           /**< Out Of Band data not available. */
 #define SEC_PARAM_MIN_KEY_SIZE          7                                           /**< Minimum encryption key size. */
 #define SEC_PARAM_MAX_KEY_SIZE          16                                          /**< Maximum encryption key size. */
-
 
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 static ble_gap_sec_params_t             m_sec_params;                               /**< Security requirements for this application. */
@@ -216,10 +215,6 @@ static void ble_stack_init(void)
 }
 
 
-
-
-
-
 /**@brief Function for initializing the button handler module.
  */
 static void buttons_init(void)
@@ -338,7 +333,7 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
 }
 
 
-void ble_setup(ble_ms_t* p_ms){
+void ble_setup(ble_ms_t* p_ms,MUG_STATUS* mug_list, int is_first){
     conn = 0;                //is connected set to false
 
     leds_init();                  
@@ -348,7 +343,9 @@ void ble_setup(ble_ms_t* p_ms){
     ble_stack_init();
     scheduler_init();
     gap_params_init();
-
+    if(is_first){
+      services_init(mug_list);
+    }
     advertising_init(p_ms);
     conn_params_init();
     sec_params_init();
