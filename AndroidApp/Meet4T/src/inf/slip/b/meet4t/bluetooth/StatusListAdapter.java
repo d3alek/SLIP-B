@@ -115,4 +115,10 @@ public class StatusListAdapter extends BaseAdapter implements OnClickListener {
 			dataList.add(new StatusListItem(people.get(i).first, people.get(i).second, MugStatus.NOT_YET_INVITED));
 		}
 	}
+
+	public void receivedAccept(String mugID) {
+		StatusListItem item = getItemById(mugID);
+		item.setMugStatus(MugStatus.ACCEPTED);
+		notifyDataSetChanged();
+	}
 }

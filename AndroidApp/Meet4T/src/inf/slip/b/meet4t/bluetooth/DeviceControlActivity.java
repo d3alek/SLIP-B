@@ -17,15 +17,12 @@
 package inf.slip.b.meet4t.bluetooth;
 
 import inf.slip.b.meet4t.R;
+import inf.slip.b.meet4t.bluetooth.StatusListItem.MugStatus;
 import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
-import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -45,7 +42,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
-import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -86,6 +82,8 @@ public class DeviceControlActivity extends ListActivity {
     private final String LIST_UUID = "UUID";
 
     private StatusListAdapter adapter;
+
+    private boolean waitingConfirmations = false;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -135,15 +133,21 @@ public class DeviceControlActivity extends ListActivity {
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
 //                displayGattServices(mBluetoothLeService.getSupportedGattServices());
+                mBluetoothLeService.setCharacteristicNotification(getPendingCharacteristic(), true);
                 inviteNextMug();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	Log.i("Cat", "action data available");
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 BluetoothGattCharacteristic changedCharacteristic = mBluetoothLeService.getCharacteristicByUuid(UUID.fromString(data));
                 mBluetoothLeService.readCharacteristic(changedCharacteristic);
-                Log.i("Cat", data + "'s new value is: " + changedCharacteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0));
-                if (data.equals(PENDING_CHARACTERISTIC)) {
+                Log.i("Cat", data + "'s new value is: " + getStringFromByte(changedCharacteristic.getValue()));
+                if (!data.equals(PENDING_CHARACTERISTIC)) {
+                	return ;
+                }
+                if (! waitingConfirmations) {
 	                inviteNextMug();
+                } else {
+                	getConfirmation();
                 }
             } else if (action.equals("WRITE_SUCCESS")) {
             	Log.i("Cat", "got write success");
@@ -156,9 +160,14 @@ public class DeviceControlActivity extends ListActivity {
     };
 
     @Override
-    protected void onListItemClick(ListView l, View v, int  position, long id) {
+    protected void onListItemClick(ListView l, View view, int  position, long id) {
     	StatusListItem item = (StatusListItem) adapter.getItem(position);
     	Toast.makeText(this, item.getMugID(), Toast.LENGTH_SHORT).show();
+//    	item.setMugStatus(MugStatus.ACCEPTED);
+//    	view.findViewById(R.id.not_invited_yet).setVisibility(View.INVISIBLE);
+//    	view.findViewById(R.id.invited_accepted).setVisibility(View.VISIBLE);
+//    	adapter.notifyDataSetChanged();
+//    	adapter.receivedAccept(item.getMugID());
     }
 
 
@@ -379,8 +388,25 @@ public class DeviceControlActivity extends ListActivity {
     		mBluetoothLeService.writeCharacteristic(c);
     		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
+			waitingConfirmations = true;
 			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
                }
     }
+
+    private void getConfirmation() {
+    	BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
+//    	mBluetoothLeService.readCharacteristic(characteristic);
+    	String value = getStringFromByte(characteristic.getValue());
+    	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
+    }
+
+
+	private String getStringFromByte(byte[] bytes) {
+		StringBuilder sb = new StringBuilder(bytes.length);
+		for (int i = 0; i < bytes.length; i++) {
+			sb.append(String.format("%02x", bytes[i]&0xff));
+		}
+		return sb.toString();
+	}
 }
 
