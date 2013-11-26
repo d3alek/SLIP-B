@@ -143,7 +143,12 @@ public class DeviceControlActivity extends ListActivity {
                 	return ;
                 }
                 if (! waitingConfirmations) {
-	                inviteNextMug();
+                	mHandler.postDelayed(new Runnable() {
+                		@Override
+                		public void run() {
+                			inviteNextMug();
+                		}
+                	}, 5000);
                 } else {
                 	getConfirmation();
                 }
