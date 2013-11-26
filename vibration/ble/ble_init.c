@@ -336,6 +336,12 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
 void ble_setup(ble_ms_t* p_ms,MUG_STATUS* mug_list, int is_first){
     conn = 0;                //is connected set to false
 
+
+    char buf[30];
+    sprintf((char*)buf, "Setup first call %d\n",is_first);
+    simple_uart_putstring(buf);
+
+
     leds_init();                  
     timers_init();
     gpiote_init();
@@ -343,13 +349,16 @@ void ble_setup(ble_ms_t* p_ms,MUG_STATUS* mug_list, int is_first){
     ble_stack_init();
     scheduler_init();
     gap_params_init();
-    if(is_first){
-      services_init(mug_list);
-    }
+    services_init(mug_list);
     advertising_init(p_ms);
     conn_params_init();
     sec_params_init();
 
+   // Initialize service structure
+     if(is_first){
+        p_ms->mug_len = 0; 
+    //     p_ms->ready =0;        
+     }
     // Start advertising
     advertising_start();
 

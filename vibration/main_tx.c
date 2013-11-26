@@ -105,7 +105,7 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
 
 	if(error_code == 5){
 	 //	radio_configure();		
-	    start_ble(MUG_LIST);
+	    start_ble(MUG_LIST,0);
 	  //  twi_master_init();
 	}
 	if(error_code ==0 )
@@ -202,10 +202,11 @@ static ble_ms_t* initialize_all()
     simple_uart_putstring("DONE RADIO INIT\n");
 
 	// initialize bluetooth
-	ble_ms_t* p_ms = start_ble(MUG_LIST,true); 
+	ble_ms_t* p_ms = start_ble(MUG_LIST,1); 
 	simple_uart_putstring("BLUETOOTH STARTED\n");
 		
 	// initialize twi
+	simple_uart_putstring("TWI MASTER INIT\n");
 	twi_master_init(); 
 	simple_uart_putstring("DONE TWI MASTER INIT\n");
 		
@@ -242,8 +243,10 @@ int main(){
                   BLE DEBUG
          ==========================================*/
 		 if (is_connected() && waitToConnectAndRSVP) {
-		 	 set_replies(ctr);
-		 	 ctr++;
+		 	//  set_replies(ctr);
+		 //	  ctr++;
+		 	 RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
+             //waitToConnectAndRSVP
 		 }
 
          //All the mugs that will be invited have been set usig BLE
@@ -265,7 +268,8 @@ int main(){
 			bool all_final_state = true;
 			int8_t current_mug = 0;
 
-		 	while (!disovery_complete){
+		 	while (!disovery_complete && ctr < 120){
+		 		ctr ++;
 		 		if (MUG_LIST[current_mug].MUG_ID != 0){
 		 			// sprintf((char*)buf, "Checking : %d %llx\n",  current_mug, MUG_LIST[current_mug].MUG_ID);
 		 			// simple_uart_putstring(buf);
@@ -289,7 +293,7 @@ int main(){
 								simple_uart_putstring(buf);
 							}
 						} else {
-							sprintf((char*)buf, "ERROR : %llx %llx\n",  packet[0], packet[1]);
+							sprintf((char*)buf, "%d ERROR : %llx %llx \n",ctr,  packet[0], packet[1]);
 							simple_uart_putstring(buf);
 							simple_uart_putstring("Mug is OFF\n");
 							MUG_LIST[current_mug].PIPELINE_STATUS = OFF;
@@ -355,14 +359,13 @@ int main(){
 	       	simple_uart_putstring("Enabled soft device\n");
 
 	       	//restart ble
-			start_ble(MUG_LIST,false);
+			start_ble(MUG_LIST,0);
 
 			waitToConnectAndRSVP = true;
-			//RSVP_App();  //sends MUG information back to app via ble, defined in slip_ble.c 
 
 		}		
 
-		debug_ble_ids();
+		debug_ble_ids(MUG_LIST);
 		app_sched_execute();
 		nrf_delay_ms(500);
 
