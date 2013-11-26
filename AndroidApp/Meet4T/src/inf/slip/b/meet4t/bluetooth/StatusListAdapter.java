@@ -97,6 +97,10 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 //		Log.d("Cat", "clicked " + data.getName());
 //	}
 
+	/**
+	 * Return null if list has no such mugID
+	 * @param mugID 16 character string
+	 */
 	public StatusListItem getItemById(String mugID) {
 		for (StatusListItem item : dataList) {
 			if (item.getMugID().equals(mugID)) {

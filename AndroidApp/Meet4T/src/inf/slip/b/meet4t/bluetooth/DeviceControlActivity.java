@@ -64,6 +64,7 @@ public class DeviceControlActivity extends ListActivity {
 	
 	private static final String END_OF_MUG_QUEUE = "1111111111111111";
 	private static final int REQUEST_INVITEES = 3;
+	private static final long RESEND_ATTEMPT_INTERVAL = 1000;
 
 
 	private Handler mHandler;
@@ -124,7 +125,7 @@ public class DeviceControlActivity extends ListActivity {
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 invalidateOptionsMenu();
-//                tryToReconnect();
+                tryToReconnect();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
                 mBluetoothLeService.setCharacteristicNotification(getPendingCharacteristic(), true);
@@ -235,6 +236,7 @@ public class DeviceControlActivity extends ListActivity {
     }
 	private ArrayList<String> mugQueue;
 	private ArrayList<Pair<String,String>> inviteesList;
+	private Toast currentToast;
 
     private void invitePeople(){
     	Intent intent = new Intent(this, InvitePeopleActivity.class);
@@ -251,8 +253,6 @@ public class DeviceControlActivity extends ListActivity {
     		if (requestCode == REQUEST_INVITEES) {
     		Bundle extras = data.getExtras();
     		if (extras.containsKey("invitees")){
-    			Toast.makeText(this, "intent has extras", Toast.LENGTH_SHORT).show();
-    			Log.d("Cat", "intent has extras: ");
     			String invitees = extras.getString("invitees");
     			Log.d("Cat", invitees);
     			Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
@@ -260,33 +260,34 @@ public class DeviceControlActivity extends ListActivity {
     			Log.d(TAG, "HEYA + " + inviteesList.size());
     			mugQueue = getMugs(inviteesList);
     			mugQueue.add(END_OF_MUG_QUEUE);
+    			mugQueue.add(END_OF_MUG_QUEUE);
     			try {
     			adapter.addItems(inviteesList);
     			adapter.notifyDataSetChanged();
     			} catch (Exception e) {
-    	    		Toast.makeText(this, "adapter exception", Toast.LENGTH_LONG).show();
+    	    		Toast.makeText(this, "adapter exception", Toast.LENGTH_SHORT).show();
     	    	}
     		} else {
-    			Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_LONG).show();
+    			Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_SHORT).show();
     		}
     	}
     	} catch (Exception e) {
-    		Toast.makeText(this, "exception", Toast.LENGTH_LONG).show();
+    		Toast.makeText(this, "exception", Toast.LENGTH_SHORT).show();
     	}
     }
 
     private void tryToReconnect() {
-    	if (mBluetoothLeService != null) {
-            final boolean result = mBluetoothLeService.connect(mDeviceAddress);
-            Log.d(TAG, "Connect request result=" + result);
-            if (result) {
-            	Log.d("Cat", "Reconnected to the device");
-            	return;
-            }
-        }
     	mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
+            	if (mBluetoothLeService != null) {
+                    final boolean result = mBluetoothLeService.connect(mDeviceAddress);
+                    Log.d(TAG, "Connect request result=" + result);
+                    if (result) {
+                    	Log.d("Cat", "Reconnected to the device");
+                    	return;
+                    }
+                }
             	tryToReconnect();
             }
         }, RECONNECT_ATTEMPT_INTERVAL);
@@ -380,23 +381,56 @@ public class DeviceControlActivity extends ListActivity {
                }
     }
 
+    Runnable sendEOQlater = new Runnable() {
+		@Override
+		public void run() {
+			BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
+			characteristic.setValue(END_OF_MUG_QUEUE);
+			mBluetoothLeService.writeCharacteristic(characteristic);
+			Toast.makeText(getApplicationContext(), "Sent " + END_OF_MUG_QUEUE, Toast.LENGTH_SHORT).show();
+			Log.i("Cat", "Sent end of queue again ");
+		}
+	};
+
     private void getConfirmation() {
     	BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
     	String value = getStringFromCharacteristic(characteristic);
+    	if (value.equals("00 ")) {
+    		mHandler.removeCallbacks(sendEOQlater);
+    		mHandler.postDelayed(sendEOQlater, RESEND_ATTEMPT_INTERVAL);
+    	} else {
+    		String confirmedMug = value.replaceAll(" ", "");
+    		Log.d("Cat", "Confirmed mug: " + confirmedMug);
+    		confirmListItem(confirmedMug);
+    	}
     	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
     }
 
 
+	private void confirmListItem(String confirmedMug) {
+		// TODO Auto-generated method stub
+		StatusListItem item = (StatusListItem) adapter.getItemById(confirmedMug);
+		if (item == null) {
+			return ; 
+		}
+    	if (item.getMugStatus() != MugStatus.ACCEPTED) {
+    		item.setMugStatus(MugStatus.ACCEPTED);
+    		adapter.notifyDataSetChanged();
+    	}
+	}
+
 	private String getStringFromCharacteristic(BluetoothGattCharacteristic characteristic) {
-		String value = "" 
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 4)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 3)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7)
-    			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6);
+		String value;
+        final byte[] data = characteristic.getValue();
+        if (data != null && data.length > 0) {
+            final StringBuilder stringBuilder = new StringBuilder(data.length);
+            for(byte byteChar : data)
+                stringBuilder.insert(0, String.format("%02X ", byteChar));
+            value = stringBuilder.toString();
+            Log.i(TAG, "data \"" + value + "\"");
+        } else {
+        	value = " data is null ";
+        }
     	return value;
 	}
 }
