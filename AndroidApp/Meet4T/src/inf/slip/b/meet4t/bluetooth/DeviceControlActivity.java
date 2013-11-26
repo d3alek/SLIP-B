@@ -76,7 +76,6 @@ public class DeviceControlActivity extends ListActivity {
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
     private boolean mConnected = false;
-//    private BluetoothGattCharacteristic mNotifyCharacteristic;
 
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
@@ -121,18 +120,13 @@ public class DeviceControlActivity extends ListActivity {
         	Log.i("Cat", "action: " + action);
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
-//                updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
-//                displayGattServices(mBluetoothLeService.getSupportedGattServices());
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
-//                updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
 //                tryToReconnect();
-                clearUI();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
-//                displayGattServices(mBluetoothLeService.getSupportedGattServices());
                 mBluetoothLeService.setCharacteristicNotification(getPendingCharacteristic(), true);
                 inviteNextMug();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
@@ -140,7 +134,7 @@ public class DeviceControlActivity extends ListActivity {
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 BluetoothGattCharacteristic changedCharacteristic = mBluetoothLeService.getCharacteristicByUuid(UUID.fromString(data));
                 mBluetoothLeService.readCharacteristic(changedCharacteristic);
-                Log.i("Cat", data + "'s new value is: " + getStringFromByte(changedCharacteristic.getValue()));
+                Log.i("Cat", data + "'s new value is: " + getStringFromCharacteristic(changedCharacteristic));
                 if (!data.equals(PENDING_CHARACTERISTIC)) {
                 	return ;
                 }
@@ -168,16 +162,7 @@ public class DeviceControlActivity extends ListActivity {
     	} else {
     		item.setMugStatus(MugStatus.NOT_YET_INVITED);
     	}
-//    	view.findViewById(R.id.not_invited_yet).setVisibility(View.INVISIBLE);
-//    	view.findViewById(R.id.invited_accepted).setVisibility(View.VISIBLE);
     	adapter.notifyDataSetChanged();
-//    	adapter.receivedAccept(item.getMugID());
-    }
-
-
-    private void clearUI() {
-//        mGattServicesList.setAdapter((SimpleExpandableListAdapter) null);
-//        mDataField.setText(R.string.no_data);
     }
 
     @Override
@@ -189,8 +174,6 @@ public class DeviceControlActivity extends ListActivity {
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
-
-//        mConnectionState = (TextView) findViewById(R.id.connection_state);
         mHandler = new Handler();
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -399,9 +382,13 @@ public class DeviceControlActivity extends ListActivity {
 
     private void getConfirmation() {
     	BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
-//    	mBluetoothLeService.readCharacteristic(characteristic);
-//    	String value = getStringFromByte(characteristic.getValue());
-    	String value = "" 
+    	String value = getStringFromCharacteristic(characteristic);
+    	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
+    }
+
+
+	private String getStringFromCharacteristic(BluetoothGattCharacteristic characteristic) {
+		String value = "" 
     			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 1)
     			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
     			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 5)
@@ -410,16 +397,7 @@ public class DeviceControlActivity extends ListActivity {
     			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 2)
     			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 7)
     			+ characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 6);
-    	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
-    }
-
-
-	private String getStringFromByte(byte[] bytes) {
-		StringBuilder sb = new StringBuilder(bytes.length);
-		for (int i = 0; i < bytes.length; i++) {
-			sb.append(String.format("%02x", bytes[i]&0xff));
-		}
-		return sb.toString();
+    	return value;
 	}
 }
 
