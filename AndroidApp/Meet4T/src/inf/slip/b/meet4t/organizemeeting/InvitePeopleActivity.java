@@ -6,6 +6,7 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 
 public class InvitePeopleActivity extends ListActivity {
@@ -18,13 +19,16 @@ public class InvitePeopleActivity extends ListActivity {
 			setContentView(R.layout.activity_invitepeople);
 			adapter = new PeopleListAdapter(
 					getLayoutInflater());
-			final Button invitePeopleButton = (Button) findViewById(R.id.invite_people);
+			Button invitePeopleButton = new Button(this);
 			invitePeopleButton.setOnClickListener(new View.OnClickListener() {
 	            public void onClick(View v) {
 	            	invitePeople(adapter.getSelectedPeopleString());
 	        		}
 	        });
+			invitePeopleButton.setText("Invite");
+			getListView().addFooterView(invitePeopleButton);
 			getListView().setAdapter(adapter);
+			
 
 		}
 

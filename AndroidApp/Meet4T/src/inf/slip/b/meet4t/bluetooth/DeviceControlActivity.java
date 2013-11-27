@@ -21,7 +21,6 @@ import inf.slip.b.meet4t.bluetooth.StatusListItem.MugStatus;
 import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.UUID;
 
 import android.app.ListActivity;
@@ -66,6 +65,8 @@ public class DeviceControlActivity extends ListActivity {
 	private static final String END_OF_MUG_QUEUE = "1111111111111111";
 	private static final int REQUEST_INVITEES = 3;
 	private static final long RESEND_ATTEMPT_INTERVAL = 1000;
+	private static final String DONE_ACKNOWLEDGEMENTS_VALUE = "00 00 00 00 00 00 00 FF ";
+	private static final String RECEIVED_INVITATION_VALUE = "00 ";
 
 
 	private Handler mHandler;
@@ -165,7 +166,7 @@ public class DeviceControlActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View view, int  position, long id) {
     	StatusListItem item = (StatusListItem) adapter.getItem(position);
-    	Toast.makeText(this, item.getMugID(), Toast.LENGTH_SHORT).show();
+//    	Toast.makeText(this, item.getMugID(), Toast.LENGTH_SHORT).show();
     	if (item.getMugStatus() == MugStatus.NOT_YET_INVITED) {
     		item.setMugStatus(MugStatus.ACCEPTED);
     	} else {
@@ -188,7 +189,7 @@ public class DeviceControlActivity extends ListActivity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-        confirmationToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+//        confirmationToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
         invitePeople();
     }
 
@@ -264,7 +265,7 @@ public class DeviceControlActivity extends ListActivity {
     		Bundle extras = data.getExtras();
     		if (extras.containsKey("invitees")){
     			String invitees = extras.getString("invitees");
-    			Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
+//    			Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
     			inviteesList = getPeople(invitees);
     			mugQueue = getMugs(inviteesList);
     			mugQueue.add(END_OF_MUG_QUEUE);
@@ -274,14 +275,14 @@ public class DeviceControlActivity extends ListActivity {
     			adapter.addItems(inviteesList);
     			adapter.notifyDataSetChanged();
     			} catch (Exception e) {
-    	    		Toast.makeText(this, "adapter exception", Toast.LENGTH_SHORT).show();
+//    	    		Toast.makeText(this, "adapter exception", Toast.LENGTH_SHORT).show();
     	    	}
     		} else {
-    			Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_SHORT).show();
+//    			Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_SHORT).show();
     		}
     	}
     	} catch (Exception e) {
-    		Toast.makeText(this, "exception", Toast.LENGTH_SHORT).show();
+//    		Toast.makeText(this, "exception", Toast.LENGTH_SHORT).show();
     	}
     }
 
@@ -386,10 +387,10 @@ public class DeviceControlActivity extends ListActivity {
 			nextMug = nextMug + "0000000000000000".substring(nextMug.length());
 			c.setValue(nextMug);
     		mBluetoothLeService.writeCharacteristic(c);
-    		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
+//    		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			waitingConfirmations = true;
-			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
+//			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
 		}
     }
 
@@ -399,7 +400,7 @@ public class DeviceControlActivity extends ListActivity {
 			BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
 			characteristic.setValue(END_OF_MUG_QUEUE);
 			mBluetoothLeService.writeCharacteristic(characteristic);
-			Toast.makeText(getApplicationContext(), "Sent " + END_OF_MUG_QUEUE, Toast.LENGTH_SHORT).show();
+//			Toast.makeText(getApplicationContext(), "Sent " + END_OF_MUG_QUEUE, Toast.LENGTH_SHORT).show();
 			Log.i("Cat", "Sent end of queue again ");
 		}
 	};
@@ -407,9 +408,11 @@ public class DeviceControlActivity extends ListActivity {
     private void getConfirmation() {
     	BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
     	String value = getStringFromCharacteristic(characteristic);
-    	if (value.equals("00 ")) {
+    	if (value.equals(RECEIVED_INVITATION_VALUE)) {
     		mHandler.removeCallbacks(sendEOQlater);
     		mHandler.postDelayed(sendEOQlater, RESEND_ATTEMPT_INTERVAL);
+    	} else if (value.equals(DONE_ACKNOWLEDGEMENTS_VALUE)) {
+    		adapter.assumeEveryoneElseDeclined();
     	} else {
     		String confirmedMug = value.replaceAll(" ", "");
     		confirmedMug = confirmedMug.toLowerCase();

@@ -122,4 +122,13 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 		item.setMugStatus(MugStatus.ACCEPTED);
 		notifyDataSetChanged();
 	}
+
+	public void assumeEveryoneElseDeclined() {
+		for (StatusListItem item : dataList) {
+			if (item.getMugStatus() != MugStatus.ACCEPTED) {
+				item.setMugStatus(MugStatus.DECLINED);
+			}
+		}
+		notifyDataSetChanged();
+	}
 }

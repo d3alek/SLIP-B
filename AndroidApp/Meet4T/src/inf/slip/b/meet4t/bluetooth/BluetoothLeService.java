@@ -318,7 +318,7 @@ public class BluetoothLeService extends Service {
 	        Log.i(TAG, "Characteristic notification set!");
         }
         else {
-        	Toast.makeText(getApplicationContext(), "Descriptor is null in setCharacteristicNotification", Toast.LENGTH_SHORT).show();
+//        	Toast.makeText(getApplicationContext(), "Descriptor is null in setCharacteristicNotification", Toast.LENGTH_SHORT).show();
 	        Log.i(TAG, "Characteristic notification not set as descriptor is null!");
         }
         
