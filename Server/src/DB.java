@@ -181,14 +181,37 @@ public class DB {
 	{
 		_cupIdToContact.put("d163bbdd530ec035", "alek");
 		_cupIdToContact.put("36a5c5d5cc28739a", "catalina");
-		_cupIdToContact.put("e164bcde513cf831", "ewan");
-		_cupIdToContact.put("aj385763j1rl389l", "georgi");
-		_cupIdToContact.put("3jd2j685kld930s1", "markus");
+		_cupIdToContact.put("a2a7b4dd06bfe1b8","ewan");
+		_cupIdToContact.put("62304f49124a3fdf","georgi");
+		_cupIdToContact.put("69839aac6e58a5a1","markus");
+		_cupIdToContact.put("f1b15f3fa8ac20dd","haralampii");
+		_cupIdToContact.put("36c2ec472b92679e","strahil");
+		_cupIdToContact.put("40605342121cbcde","ghita");
+		_cupIdToContact.put("fb743c997802e631","rhuaridh");
+		_cupIdToContact.put("3433085d22f83506","angus");
+		_cupIdToContact.put("4f4710d9fd4673ee","franz");
+		_cupIdToContact.put("347a2a8b1f697a7f","fritz");
+		_cupIdToContact.put("99c61bcc3229a470","gigel");
+		_cupIdToContact.put("3a2fe9250288e39b","morag");
+		_cupIdToContact.put("2df30ba1413c78b1","radu");
 		
 		_contactToNumber.put("alek", "07812345678");
 		_contactToNumber.put("catalina", "07787654321");
 		_contactToNumber.put("ewan", "07984613457");
 		_contactToNumber.put("georgi", "07164831325");
-		_contactToNumber.put("markus", "07717483647");
+		_contactToNumber.put("markus", "07853868475");
+		_contactToNumber.put("haralampii", "07812854785");
+		_contactToNumber.put("strahil", "07156984578");
+		_contactToNumber.put("ghita", "07246571235");
+		_contactToNumber.put("rhuaridh", "07164789452");
+		_contactToNumber.put("angus", "07246791234");
+		_contactToNumber.put("franz", "07446792584");
+		_contactToNumber.put("fritz", "07564973158");
+		_contactToNumber.put("gigel", "07675558966");
+		_contactToNumber.put("morag", "07965555555");
+		_contactToNumber.put("radu", "07877777777");
+		
+		
+		
 	}
 }
