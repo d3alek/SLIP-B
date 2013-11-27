@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
+import android.widget.Toast;
 
 public class InvitePeopleActivity extends ListActivity {
 	
@@ -33,10 +34,12 @@ public class InvitePeopleActivity extends ListActivity {
 		}
 
 		private void invitePeople(String selectedPeople) {
-			Intent i = getIntent();
-			if (selectedPeople != null) {
-				i.putExtra("invitees", selectedPeople);
+			if (selectedPeople == null) {
+				Toast.makeText(this, "You should invite people to your meeting", Toast.LENGTH_SHORT).show();
+				return;
 			}
+			Intent i = getIntent();
+			i.putExtra("invitees", selectedPeople);
 			setResult(RESULT_OK, i);
 			finish();
 		}

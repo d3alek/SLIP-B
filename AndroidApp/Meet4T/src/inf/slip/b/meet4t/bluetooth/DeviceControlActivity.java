@@ -262,25 +262,25 @@ public class DeviceControlActivity extends ListActivity {
     	}
     	try {
     		if (requestCode == REQUEST_INVITEES) {
-    		Bundle extras = data.getExtras();
-    		if (extras.containsKey("invitees")){
-    			String invitees = extras.getString("invitees");
-//    			Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
-    			inviteesList = getPeople(invitees);
-    			mugQueue = getMugs(inviteesList);
-    			mugQueue.add(END_OF_MUG_QUEUE);
-    			mugQueue2 = getMugs(inviteesList);
-    			mugQueue2.add(END_OF_MUG_QUEUE);
-    			try {
-    			adapter.addItems(inviteesList);
-    			adapter.notifyDataSetChanged();
-    			} catch (Exception e) {
-//    	    		Toast.makeText(this, "adapter exception", Toast.LENGTH_SHORT).show();
-    	    	}
-    		} else {
-//    			Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_SHORT).show();
+    			Bundle extras = data.getExtras();
+    			if (extras.containsKey("invitees")){
+    				String invitees = extras.getString("invitees");
+//    				Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
+    				inviteesList = getPeople(invitees);
+    				mugQueue = getMugs(inviteesList);
+    				mugQueue.add(END_OF_MUG_QUEUE);
+    				mugQueue2 = getMugs(inviteesList);
+    				mugQueue2.add(END_OF_MUG_QUEUE);
+    				try {
+    					adapter.addItems(inviteesList);
+    					adapter.notifyDataSetChanged();
+    				} catch (Exception e) {
+//    					Toast.makeText(this, "adapter exception", Toast.LENGTH_SHORT).show();
+    				}
+    			} else {
+//    				Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_SHORT).show();
+    			}
     		}
-    	}
     	} catch (Exception e) {
 //    		Toast.makeText(this, "exception", Toast.LENGTH_SHORT).show();
     	}
@@ -362,6 +362,9 @@ public class DeviceControlActivity extends ListActivity {
      * Returns the id of the next mug, and removes it from the queue. Returns null if there is no mug to invite.
      */
     private String getNextMug() {
+    	if (mugQueue == null) {
+    		return null;
+    	}
     	if (mugQueue.size() >= 1) {
     		return mugQueue.remove(0);
     	}
