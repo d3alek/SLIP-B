@@ -5,7 +5,6 @@ import inf.slip.b.meet4t.bluetooth.BluetoothLeService;
 import inf.slip.b.meet4t.bluetooth.DeviceControlActivity;
 import inf.slip.b.meet4t.bluetooth.DeviceScanActivity;
 import inf.slip.b.meet4t.bump.BumpFileActivity;
-import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
