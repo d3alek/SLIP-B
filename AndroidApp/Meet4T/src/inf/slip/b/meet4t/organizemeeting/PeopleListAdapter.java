@@ -98,7 +98,7 @@ public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
 		String namesRequest = "kettle2 names";
 		String mugIDsRequest = "kettle2 cups";
 		try {
-			url = new URL("http://54.201.81.197:8080/test");
+			url = new URL("http://54.201.94.129:8080/test");
 			// Getting names
 			HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 			urlConnection.setDoOutput(true);

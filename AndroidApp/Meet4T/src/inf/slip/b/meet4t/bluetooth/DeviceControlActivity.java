@@ -18,6 +18,7 @@ package inf.slip.b.meet4t.bluetooth;
 
 import inf.slip.b.meet4t.R;
 import inf.slip.b.meet4t.bluetooth.StatusListItem.MugStatus;
+import inf.slip.b.meet4t.main.MainActivity;
 import inf.slip.b.meet4t.organizemeeting.InvitePeopleActivity;
 
 import java.util.ArrayList;
@@ -187,9 +188,10 @@ public class DeviceControlActivity extends ListActivity {
         mHandler = new Handler();
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
-        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
-        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-//        confirmationToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+        if (!getIntent().hasExtra(MainActivity.EXTRA_MODE)) {
+        	Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        	bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        }
         invitePeople();
     }
 

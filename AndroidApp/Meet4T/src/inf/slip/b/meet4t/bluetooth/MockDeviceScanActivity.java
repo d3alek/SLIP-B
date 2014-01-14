@@ -17,6 +17,7 @@
 package inf.slip.b.meet4t.bluetooth;
 
 import inf.slip.b.meet4t.R;
+import inf.slip.b.meet4t.main.MainActivity;
 
 import java.util.ArrayList;
 
@@ -43,7 +44,7 @@ import android.widget.Toast;
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
-public class DeviceScanActivity extends ListActivity {
+public class MockDeviceScanActivity extends ListActivity {
 	private LeDeviceListAdapter mLeDeviceListAdapter;
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
@@ -52,6 +53,8 @@ public class DeviceScanActivity extends ListActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
+    private static final long TIME_UNTIL_FIRST_MOCK = 2000;
+    private static final long TIME_UNTIL_SECOND_MOCK = 4000;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,7 +68,7 @@ public class DeviceScanActivity extends ListActivity {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
-        getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
+        getWindow().setBackgroundDrawableResource(R.drawable.light_blue_bg);
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
         final BluetoothManager bluetoothManager =
@@ -78,6 +81,20 @@ public class DeviceScanActivity extends ListActivity {
             finish();
             return;
         }
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mLeDeviceListAdapter.addDevice(new MockBluetoothDevice("Mock kettle 1", "00:11:22:33:AA:BB"));
+                mLeDeviceListAdapter.notifyDataSetChanged();
+            }
+        }, TIME_UNTIL_FIRST_MOCK);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mLeDeviceListAdapter.addDevice(new MockBluetoothDevice("Mock kettle 2", "AA:BB:00:11:22:33"));
+                mLeDeviceListAdapter.notifyDataSetChanged();
+            }
+        }, TIME_UNTIL_SECOND_MOCK);
     }
 
     @Override
@@ -164,11 +181,12 @@ public class DeviceScanActivity extends ListActivity {
 			setResult(RESULT_OK, i);
 			finish();
     	} else {
-    		final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
+    		final MockBluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
     		if (device == null) return;
     		final Intent intent = new Intent(this, DeviceControlActivity.class);
     		intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
     		intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+    		intent.putExtra(MainActivity.EXTRA_MODE, getString(R.string.demo2));
     		if (mScanning) {
     			mBluetoothAdapter.stopLeScan(mLeScanCallback);
     			mScanning = false;
@@ -200,22 +218,22 @@ public class DeviceScanActivity extends ListActivity {
 
     // Adapter for holding devices found through scanning.
     private class LeDeviceListAdapter extends BaseAdapter {
-        private ArrayList<BluetoothDevice> mLeDevices;
+        private ArrayList<MockBluetoothDevice> mLeDevices;
         private LayoutInflater mInflator;
 
         public LeDeviceListAdapter() {
             super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
-            mInflator = DeviceScanActivity.this.getLayoutInflater();
+            mLeDevices = new ArrayList<MockBluetoothDevice>();
+            mInflator = MockDeviceScanActivity.this.getLayoutInflater();
         }
 
-        public void addDevice(BluetoothDevice device) {
+        public void addDevice(MockBluetoothDevice device) {
             if(!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
             }
         }
 
-        public BluetoothDevice getDevice(int position) {
+        public MockBluetoothDevice getDevice(int position) {
             return mLeDevices.get(position);
         }
 
@@ -251,7 +269,7 @@ public class DeviceScanActivity extends ListActivity {
             } else {
                 viewHolder = (ViewHolder) view.getTag();
             }
-            BluetoothDevice device = mLeDevices.get(i);
+            MockBluetoothDevice device = mLeDevices.get(i);
             final String deviceName = device.getName();
             if (deviceName != null && deviceName.length() > 0)
             	viewHolder.deviceName.setText(deviceName);
@@ -271,7 +289,7 @@ public class DeviceScanActivity extends ListActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mLeDeviceListAdapter.addDevice(device);
+                    mLeDeviceListAdapter.addDevice(new MockBluetoothDevice(device.getName(), device.getAddress()));
                     mLeDeviceListAdapter.notifyDataSetChanged();
                 }
             });
@@ -281,5 +299,23 @@ public class DeviceScanActivity extends ListActivity {
     static class ViewHolder {
         TextView deviceName;
         TextView deviceAddress;
+    }
+
+    private class MockBluetoothDevice {
+    	private String deviceName;
+    	private String deviceAddress;
+    	
+    	MockBluetoothDevice(String name, String address) {
+    		this.deviceName = name;
+    		this.deviceAddress = address;
+    	}
+ 
+    	String getName() {
+    		return this.deviceName;
+    	}
+
+    	String getAddress() {
+    		return this.deviceAddress;
+    	}
     }
 }

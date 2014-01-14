@@ -29,7 +29,14 @@
           android:showAsAction="ifRoom|withText"/>
     <item android:id="@+id/menu_stop"
           android:title="@string/menu_stop"
+          android:orderInCategory="101" />
+    <item android:id="@+id/menu_demo1"
+          android:title="@string/demo1"
           android:orderInCategory="101"
-          android:showAsAction="ifRoom|withText"/>
+          android:showAsAction="never"/>
+    <item android:id="@+id/menu_demo2"
+          android:title="@string/demo2"
+          android:orderInCategory="101"
+          android:showAsAction="never"/>
 
 </menu>

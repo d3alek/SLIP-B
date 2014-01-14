@@ -2,8 +2,8 @@ package inf.slip.b.meet4t.main;
 
 import inf.slip.b.meet4t.R;
 import inf.slip.b.meet4t.bluetooth.BluetoothLeService;
-import inf.slip.b.meet4t.bluetooth.DeviceControlActivity;
 import inf.slip.b.meet4t.bluetooth.DeviceScanActivity;
+import inf.slip.b.meet4t.bluetooth.MockDeviceScanActivity;
 import inf.slip.b.meet4t.bump.BumpFileActivity;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
+	public static final String EXTRA_MODE = "mode";
 	private static final int REQUEST_ENABLE_BT = 2; // random # >0
 	private static final int REQUEST_SET_OWN_MUG = 1;
 	private BluetoothAdapter mBluetoothAdapter;
@@ -35,7 +36,7 @@ public class MainActivity extends Activity {
 		final Button scanButton = (Button) findViewById(R.id.search_devices_button);
 		scanButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-            	scanDevices();
+            	scanDevices(null);
         		}
         });
 		scanButton.setAlpha(0);
@@ -63,6 +64,8 @@ public class MainActivity extends Activity {
 		menu.findItem(R.id.menu_scan).setVisible(false);
 		menu.findItem(R.id.menu_stop).setVisible(false);
 		menu.findItem(R.id.action_view_bump_file).setVisible(true);
+		menu.findItem(R.id.menu_demo1).setVisible(true);
+		menu.findItem(R.id.menu_demo2).setVisible(true);
 		return true;
 	}
 
@@ -84,12 +87,24 @@ public class MainActivity extends Activity {
             	Intent intent2 = new Intent(MainActivity.this, BumpFileActivity.class);
 				startActivity(intent2);
             	break;
+            case R.id.menu_demo1:
+            	scanDevices(getString(R.string.demo1));
+            	break;
+            case R.id.menu_demo2:
+            	scanDevices(getString(R.string.demo2));
+            	break;
         }
         return true;
     }
 
-	private void scanDevices() {
-		Intent intent = new Intent(this, DeviceScanActivity.class);
+	private void scanDevices(String mode) {
+		Intent intent;
+		if (mode != null) {
+			intent = new Intent(this, MockDeviceScanActivity.class);
+			intent.putExtra(EXTRA_MODE, mode);
+		} else {;
+			intent = new Intent(this, DeviceScanActivity.class);
+		}
 		startActivity(intent);
 	}
 
@@ -181,10 +196,5 @@ public class MainActivity extends Activity {
 	
 	private void bleNotification(int message) {
 	    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-	}
-
-	private void invitePeople() {
-		Intent intent = new Intent(this, DeviceControlActivity.class);
-		startActivity(intent);
 	}
 }

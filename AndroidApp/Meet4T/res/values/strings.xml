@@ -41,5 +41,6 @@
 		<string name="mug_icon">Mug icon</string>
 		<string name="own_mug">own_mug</string>
 		<string name="action_set_own_mug">Set own mug</string>
-
+		<string name="demo1">Demo 1</string>
+		<string name="demo2">Demo 2</string>
 </resources>
