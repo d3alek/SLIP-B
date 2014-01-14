@@ -1,49 +1,44 @@
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.Socket;
 import java.net.URL;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class Client {
-	private static Socket socket;
-	private static PrintWriter out;
-    private static BufferedReader in;
-    private static final String serverURL = "http://54.201.81.197:8080/test";
-    //private static final String serverURL = "http://localhost:8080/test";
-    
-	// runner method
-	public static void main(String[] args) {
+public class AllTests {
+	@SuppressWarnings("unused")
+	private static Server _server;
 	
-        try {
-        	
-        	if (args[0].equals("1"))
-        		sendCups();
-        	else if (args[0].equals("2"))
-        		sendNames();
-        	else if (args[0].equals("3"))
-    			sendName();
-        	else if (args[0].equals("4"))
-				sendNumbers();
-        	else if (args[0].equals("5"))
-				sendNumber();
-			else 
-				System.out.println("Program use: java Client [1-5]");
-        				
-        	
-        } catch (Exception e) {
-        	System.out.println("Exception: " + e);
-        }
+    private static final String serverURL = "http://54.201.94.129:8080/test";
+	
+	@BeforeClass
+	public static void setUp() throws Exception 
+	{
+		try 
+		{
+		_server = new Server();
+		} 
+		catch (IOException e) {
+			Assert.fail();
+		}
+		
+	}
 
-        System.out.println("Finito.");
+	@AfterClass
+	public static void tearDown() throws Exception 
+	{
+		// nothing to tear-down
 	}
 	
-	// HTTP GET request
-	private static void sendCups() throws Exception {
-		System.out.println("Getting all cups");
-		
+	@Test
+	public void sendCups() throws Exception {
+		// Getting all cups
 		String url = serverURL;
  
 		URL obj = new URL(url);
@@ -60,11 +55,6 @@ public class Client {
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
 		writer.write("485322d4e0f44c3d cups");
 		writer.close();
-		
-		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: 485322d4e0f44c3d cups");
-		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
 		        new InputStreamReader(con.getInputStream()));
@@ -76,15 +66,15 @@ public class Client {
 		}
 		in.close();
  
-		//print result
-		System.out.println(response.toString());
- 
+		String answer = "f1b15f3fa8ac20dd, fb743c997802e631, 69839aac6e58a5a1, 3433085d22f83506, 62304f49124a3fdf, 36c2ec472b92679e, 3a2fe9250288e39b, 36a5c5d5cc28739a, 40605342121cbcde, 4f4710d9fd4673ee, a2a7b4dd06bfe1b8, 2df30ba1413c78b1, 347a2a8b1f697a7f, d163bbdd530ec035, 99c61bcc3229a470";
+		String responseString = response.toString();
+		
+		Assert.assertTrue(answer.equals(responseString));
 	}
 	
-	// HTTP GET request
-	private static void sendNames() throws Exception {
-		System.out.println("Getting all names");
-		
+	@Test
+	public void sendNames() throws Exception {
+		// Getting all names
 		String url = serverURL;
  
 		URL obj = new URL(url);
@@ -102,11 +92,6 @@ public class Client {
 		writer.write("485322d4e0f44c3d names");
 		writer.close();
 		
-		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: 485322d4e0f44c3d names");
-		System.out.println("Response Code : " + responseCode);
- 
 		BufferedReader in = new BufferedReader(
 		        new InputStreamReader(con.getInputStream()));
 		String inputLine;
@@ -117,15 +102,15 @@ public class Client {
 		}
 		in.close();
  
-		//print result
-		System.out.println(response.toString());
- 
+		String responseString = response.toString();
+		String answer = "Haralampii, Rhuaridh, Markus, Angus, Georgi, Strahil, Morag, Catalina, Ghita, Franz, Ewan, Radu, Fritz, Alek, Gigel";
+		
+		Assert.assertTrue(answer.equals(responseString));
 	}
 	
-	// HTTP GET request
-	private static void sendName() throws Exception {
-		System.out.println("Getting single name");
-		
+	@Test
+	public void sendName() throws Exception {
+		// Getting single name
 		String url = serverURL;
  
 		URL obj = new URL(url);
@@ -143,11 +128,6 @@ public class Client {
 		writer.write("485322d4e0f44c3d name d163bbdd530ec035");
 		writer.close();
 		
-		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: 485322d4e0f44c3d name d163bbdd530ec035");
-		System.out.println("Response Code : " + responseCode);
- 
 		BufferedReader in = new BufferedReader(
 		        new InputStreamReader(con.getInputStream()));
 		String inputLine;
@@ -158,14 +138,15 @@ public class Client {
 		}
 		in.close();
  
-		//print result
-		System.out.println(response.toString());
- 
+		String responseString = response.toString();
+		String answer = "Alek";
+		
+		Assert.assertTrue(answer.equals(responseString));
 	}
 	
-	// HTTP GET request
-	private static void sendNumbers() throws Exception {
-		System.out.println("Getting all numbers");
+	@Test
+	public void sendNumbers() throws Exception {
+		// Getting all numbers
 		
 		String url = serverURL;
  
@@ -183,12 +164,7 @@ public class Client {
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
 		writer.write("485322d4e0f44c3d numbers");
 		writer.close();
-		
-		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: 485322d4e0f44c3d numbers");
-		System.out.println("Response Code : " + responseCode);
- 
+		 
 		BufferedReader in = new BufferedReader(
 		        new InputStreamReader(con.getInputStream()));
 		String inputLine;
@@ -199,14 +175,16 @@ public class Client {
 		}
 		in.close();
  
-		//print result
-		System.out.println(response.toString());
+		String responseString = response.toString();
+		String answer = "07812854785, 07164789452, 07853868475, 07246791234, 07164831325, 07156984578, 07965555555, 07787654321, 07246571235, 07446792584, 07984613457, 07877777777, 07564973158, 07812345678, 07675558966";
+		
+		Assert.assertTrue(responseString.equals(answer));
  
 	}
 	
-	// HTTP GET request
-	private static void sendNumber() throws Exception {
-		System.out.println("Getting single number");
+	@Test
+	public void sendNumber() throws Exception {
+		// Getting single number
 		
 		String url = serverURL;
  
@@ -224,11 +202,6 @@ public class Client {
 		OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream());
 		writer.write("485322d4e0f44c3d number 36a5c5d5cc28739a");
 		writer.close();
-		
-		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("With body: 485322d4e0f44c3d number 36a5c5d5cc28739a");
-		System.out.println("Response Code : " + responseCode);
  
 		BufferedReader in = new BufferedReader(
 		        new InputStreamReader(con.getInputStream()));
@@ -240,9 +213,10 @@ public class Client {
 		}
 		in.close();
  
-		//print result
-		System.out.println(response.toString());
- 
+		String responseString = response.toString();
+		String answer = "07787654321";
+		
+		Assert.assertTrue(responseString.equals(answer));		
 	}
-	
+
 }

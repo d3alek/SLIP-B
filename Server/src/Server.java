@@ -1,14 +1,9 @@
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -30,6 +25,21 @@ public class Server
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception 
+	{
+		HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+		server.createContext("/test", new MyHandler());
+		server.setExecutor(null); // creates a default executor
+		server.start();
+	}
+	
+	/**
+	 * Constructor that starts a new Server.
+	 * Throws IOException when failing to create 
+	 * an HTTP server.
+	 * 
+	 * @throws IOException  
+	 */	
+	public Server() throws IOException
 	{
 		HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
 		server.createContext("/test", new MyHandler());
@@ -59,10 +69,6 @@ public class Server
 		 */
 		public void handle(HttpExchange t) throws IOException 
 		{
-			// calling this method closes the input stream and 
-			// thus if you want to analyze the body, don't call this
-			//printPacketDetails(t);
-			
 			analyzePacket(t);
 		}
 
@@ -149,7 +155,7 @@ public class Server
 		 * This method replies to the HTTP exchange by 
 		 * sending the numbers of all users in the data base.
 		 * 
-		 * CONSIDER REMOVING: too much exposure
+		 * CONSIDER REMOVING: too much data exposure
 		 * 
 		 * @param t HttpExchange to handle
 		 * @throws IOException
@@ -360,68 +366,5 @@ public class Server
 			return message;
 		}
 		
-	/*
-	 ====================================================
-	 THE REMOVABLES (debugging purposes)
-	 ====================================================
-	 */
-		
-		// for debugging purposes
-		private static void printPacketDetails(HttpExchange t) 
-		{
-			printPacketHeaders(t);
-			printPacketBody(t);
-			printPacketMethod(t);
-			printPacketURI(t);
-			
-		}
-
-		private static void printPacketHeaders(HttpExchange t)
-		{
-			System.out.println("----------PACKET HEADER----------");
-			Headers h = t.getRequestHeaders();
-			Set<String> keys = h.keySet();
-			for (Iterator<String> iter = keys.iterator(); iter.hasNext();)
-			{
-				String headerElement = iter.next();
-
-				System.out.print(headerElement + ": ");
-				List<String> line = h.get(headerElement);
-				for (int i = 0 ; i < line.size(); i++) {
-					System.out.print(line.get(i) + ", ");
-				}
-				System.out.println(".");
-			}
-		}
-
-		private static void printPacketBody(HttpExchange t)
-		{
-			System.out.println("----------PACKET BODY----------");
-			InputStream body = t.getRequestBody();
-			try 
-			{
-				IoUtils.copy(body, System.out);
-				System.out.println("");
-				body.close();
-			} catch (Exception e)
-			{
-				return;
-			}
-		}
-
-		private static void printPacketURI(HttpExchange t)
-		{
-			System.out.println("----------URI----------");
-			URI packetUri = t.getRequestURI();
-			System.out.println(packetUri.toString());
-		}
-
-		private static void printPacketMethod(HttpExchange t)
-		{
-			System.out.println("----------PACKET METHOD----------");
-			String method = t.getRequestMethod();
-			System.out.println(method);
-		}
 	}
-
 }
