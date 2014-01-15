@@ -42,9 +42,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -80,15 +80,12 @@ public class DeviceControlActivity extends ListActivity {
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
     private boolean mConnected = false;
-
-    private final String LIST_NAME = "NAME";
-    private final String LIST_UUID = "UUID";
+    private boolean isDemo;
+    private String mode = null;
 
     private StatusListAdapter adapter;
 
     private boolean waitingConfirmations = false;
-
-	private Toast confirmationToast;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -123,7 +120,6 @@ public class DeviceControlActivity extends ListActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-        	Log.i("Cat", "action: " + action);
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
                 invalidateOptionsMenu();
@@ -136,26 +132,23 @@ public class DeviceControlActivity extends ListActivity {
                 mBluetoothLeService.setCharacteristicNotification(getPendingCharacteristic(), true);
                 inviteNextMug();
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-            	Log.i("Cat", "action data available");
                 String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 BluetoothGattCharacteristic changedCharacteristic = mBluetoothLeService.getCharacteristicByUuid(UUID.fromString(data));
                 mBluetoothLeService.readCharacteristic(changedCharacteristic);
-                Log.i("Cat", data + "'s new value is: " + getStringFromCharacteristic(changedCharacteristic));
                 if (!data.equals(PENDING_CHARACTERISTIC)) {
                 	return ;
                 }
-                if (! waitingConfirmations) {
+                if (waitingConfirmations) {
+                	getConfirmation();
+                } else {
                 	mHandler.postDelayed(new Runnable() {
                 		@Override
                 		public void run() {
                 			inviteNextMug();
                 		}
                 	}, 5000);
-                } else {
-                	getConfirmation();
                 }
             } else if (action.equals("WRITE_SUCCESS")) {
-            	Log.i("Cat", "got write success");
             	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
             	if (data.equals(PENDING_CHARACTERISTIC)) {
 	                inviteNextMug();
@@ -167,7 +160,6 @@ public class DeviceControlActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View view, int  position, long id) {
     	StatusListItem item = (StatusListItem) adapter.getItem(position);
-//    	Toast.makeText(this, item.getMugID(), Toast.LENGTH_SHORT).show();
     	if (item.getMugStatus() == MugStatus.NOT_YET_INVITED) {
     		item.setMugStatus(MugStatus.ACCEPTED);
     	} else {
@@ -179,8 +171,18 @@ public class DeviceControlActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        isDemo = getIntent().hasExtra(MainActivity.EXTRAS_MODE);
+        if (isDemo) {
+        	mode = getIntent().getExtras().getString(MainActivity.EXTRAS_MODE);
+        }
         setContentView(R.layout.activity_control_device);
-        adapter = new StatusListAdapter(getLayoutInflater(), getPeople(null));
+        if (isDemo && getString(R.string.demo2).equals(mode)) {
+        	getWindow().setBackgroundDrawableResource(R.drawable.light_blue_bg);
+        } else {
+        	getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
+        }
+        adapter = new StatusListAdapter(getLayoutInflater(), getPeople(null),
+        		(isDemo && getString(R.string.demo2).equals(mode)));
         getListView().setAdapter(adapter);
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
@@ -188,10 +190,8 @@ public class DeviceControlActivity extends ListActivity {
         mHandler = new Handler();
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
-        if (!getIntent().hasExtra(MainActivity.EXTRA_MODE)) {
-        	Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
-        	bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-        }
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         invitePeople();
     }
 
@@ -202,6 +202,12 @@ public class DeviceControlActivity extends ListActivity {
         if (mBluetoothLeService != null) {
             final boolean result = mBluetoothLeService.connect(mDeviceAddress);
             Log.d(TAG, "Connect request result=" + result);
+        }
+        if (isDemo && getString(R.string.demo2).equals(mode)) {
+        	ImageView v = (ImageView) getWindow().findViewById(R.id.main_bg);
+        	v.setImageResource(R.drawable.light_blue_bg);
+        } else {
+        	getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
         }
     }
 
@@ -249,10 +255,12 @@ public class DeviceControlActivity extends ListActivity {
 	private ArrayList<String> mugQueue;
 	private ArrayList<String> mugQueue2;
 	private ArrayList<Pair<String,String>> inviteesList;
-	private Toast currentToast;
 
     private void invitePeople(){
     	Intent intent = new Intent(this, InvitePeopleActivity.class);
+    	if (isDemo) {
+    		intent.putExtra(MainActivity.EXTRAS_MODE, mode);
+    	}
     	startActivityForResult(intent, REQUEST_INVITEES);
     }
  
@@ -267,7 +275,6 @@ public class DeviceControlActivity extends ListActivity {
     			Bundle extras = data.getExtras();
     			if (extras.containsKey("invitees")){
     				String invitees = extras.getString("invitees");
-//    				Toast.makeText(this, invitees, Toast.LENGTH_SHORT).show();
     				inviteesList = getPeople(invitees);
     				mugQueue = getMugs(inviteesList);
     				mugQueue.add(END_OF_MUG_QUEUE);
@@ -277,14 +284,28 @@ public class DeviceControlActivity extends ListActivity {
     					adapter.addItems(inviteesList);
     					adapter.notifyDataSetChanged();
     				} catch (Exception e) {
-//    					Toast.makeText(this, "adapter exception", Toast.LENGTH_SHORT).show();
+    					// Do nothing
+    				}
+    				if (isDemo) {
+    					mHandler.postDelayed(new Runnable() {
+    						@Override
+    						public void run() {
+    							confirmListItem(mugQueue.get(0));
+    						}
+    					}, 3000);
+    					mHandler.postDelayed(new Runnable() {
+    						@Override
+    						public void run() {
+    							adapter.assumeEveryoneElseDeclined();
+    						}
+    					}, 4000);
     				}
     			} else {
-//    				Toast.makeText(this, "Not inviting anyone", Toast.LENGTH_SHORT).show();
+    				// Do nothing
     			}
     		}
     	} catch (Exception e) {
-//    		Toast.makeText(this, "exception", Toast.LENGTH_SHORT).show();
+    		// Do nothing
     	}
     }
 
@@ -370,9 +391,6 @@ public class DeviceControlActivity extends ListActivity {
     	if (mugQueue.size() >= 1) {
     		return mugQueue.remove(0);
     	}
-//    	if (mugQueue2.size() >= 1) {
-//    		return mugQueue2.remove(0);
-//    	}
     	return null;
     }
 
@@ -392,10 +410,8 @@ public class DeviceControlActivity extends ListActivity {
 			nextMug = nextMug + "0000000000000000".substring(nextMug.length());
 			c.setValue(nextMug);
     		mBluetoothLeService.writeCharacteristic(c);
-//    		Toast.makeText(getApplicationContext(), "" + nextMug, Toast.LENGTH_SHORT).show();
 		} else {
 			waitingConfirmations = true;
-//			Toast.makeText(getApplicationContext(), "no mugs to invite", Toast.LENGTH_SHORT).show();
 		}
     }
 
@@ -405,7 +421,6 @@ public class DeviceControlActivity extends ListActivity {
 			BluetoothGattCharacteristic characteristic = getPendingCharacteristic();
 			characteristic.setValue(END_OF_MUG_QUEUE);
 			mBluetoothLeService.writeCharacteristic(characteristic);
-//			Toast.makeText(getApplicationContext(), "Sent " + END_OF_MUG_QUEUE, Toast.LENGTH_SHORT).show();
 			Log.i("Cat", "Sent end of queue again ");
 		}
 	};
@@ -421,18 +436,12 @@ public class DeviceControlActivity extends ListActivity {
     	} else {
     		String confirmedMug = value.replaceAll(" ", "");
     		confirmedMug = confirmedMug.toLowerCase();
-    		Log.d("Cat", "Confirmed mug: " + confirmedMug);
     		confirmListItem(confirmedMug);
     	}
-//    	confirmationToast.cancel();
-//    	confirmationToast.setText("Received confirmation for: " + value);
-//    	confirmationToast.show();
-//    	Toast.makeText(this, "Received confirmation for: " + value, Toast.LENGTH_SHORT).show();
     }
 
 
 	private void confirmListItem(String confirmedMug) {
-		// TODO Auto-generated method stub
 		StatusListItem item = (StatusListItem) adapter.getItemById(confirmedMug);
 		if (item == null) {
 			return ; 
@@ -451,7 +460,6 @@ public class DeviceControlActivity extends ListActivity {
             for(byte byteChar : data)
                 stringBuilder.insert(0, String.format("%02X ", byteChar));
             value = stringBuilder.toString();
-            Log.i(TAG, "data \"" + value + "\"");
         } else {
         	value = " data is null ";
         }

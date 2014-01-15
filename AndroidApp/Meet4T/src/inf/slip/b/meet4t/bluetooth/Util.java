@@ -2,6 +2,9 @@ package inf.slip.b.meet4t.bluetooth;
 
 public class Util {
 
+	/**
+	 * Auxiliary method that turns an array of bytes into a string.
+	 */
     public static String bytArrayToHex(byte[] array) {
     	StringBuilder sb = new StringBuilder();
     	for (byte b : array) {

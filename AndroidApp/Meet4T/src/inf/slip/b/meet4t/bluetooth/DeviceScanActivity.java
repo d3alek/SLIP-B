@@ -17,6 +17,7 @@
 package inf.slip.b.meet4t.bluetooth;
 
 import inf.slip.b.meet4t.R;
+import inf.slip.b.meet4t.main.MainActivity;
 
 import java.util.ArrayList;
 
@@ -48,14 +49,23 @@ public class DeviceScanActivity extends ListActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private Handler mHandler;
+    private boolean isDemo;
+    private String mode = null;
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
+    // For demos
+    private static final long TIME_UNTIL_FIRST_MOCK = 2000;
+    private static final long TIME_UNTIL_SECOND_MOCK = 4000;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        isDemo = getIntent().hasExtra(MainActivity.EXTRAS_MODE);
+        if (isDemo) {
+        	mode = getIntent().getExtras().getString(MainActivity.EXTRAS_MODE);
+        }
         getActionBar().setTitle(R.string.title_devices);
         mHandler = new Handler();
 
@@ -65,7 +75,11 @@ public class DeviceScanActivity extends ListActivity {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
-        getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
+        if (isDemo && mode.equals(getString(R.string.demo2))) {
+        	getWindow().setBackgroundDrawableResource(R.drawable.light_blue_bg);
+        } else {
+        	getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
+        }
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
         final BluetoothManager bluetoothManager =
@@ -137,6 +151,22 @@ public class DeviceScanActivity extends ListActivity {
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
         scanLeDevice(true);
+        if (isDemo) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper("Mock kettle 1", "00:11:22:33:AA:BB"));
+                    mLeDeviceListAdapter.notifyDataSetChanged();
+                }
+            }, TIME_UNTIL_FIRST_MOCK);
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper("Mock kettle 2", "AA:BB:00:11:22:33"));
+                    mLeDeviceListAdapter.notifyDataSetChanged();
+                }
+            }, TIME_UNTIL_SECOND_MOCK);
+        }
     }
 
     @Override
@@ -164,11 +194,12 @@ public class DeviceScanActivity extends ListActivity {
 			setResult(RESULT_OK, i);
 			finish();
     	} else {
-    		final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
+    		final BluetoothDeviceWraper device = mLeDeviceListAdapter.getDevice(position);
     		if (device == null) return;
     		final Intent intent = new Intent(this, DeviceControlActivity.class);
     		intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
     		intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+    		intent.putExtra(MainActivity.EXTRAS_MODE, mode);
     		if (mScanning) {
     			mBluetoothAdapter.stopLeScan(mLeScanCallback);
     			mScanning = false;
@@ -200,22 +231,22 @@ public class DeviceScanActivity extends ListActivity {
 
     // Adapter for holding devices found through scanning.
     private class LeDeviceListAdapter extends BaseAdapter {
-        private ArrayList<BluetoothDevice> mLeDevices;
+        private ArrayList<BluetoothDeviceWraper> mLeDevices;
         private LayoutInflater mInflator;
 
         public LeDeviceListAdapter() {
             super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
+            mLeDevices = new ArrayList<BluetoothDeviceWraper>();
             mInflator = DeviceScanActivity.this.getLayoutInflater();
         }
 
-        public void addDevice(BluetoothDevice device) {
+        public void addDevice(BluetoothDeviceWraper device) {
             if(!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
             }
         }
 
-        public BluetoothDevice getDevice(int position) {
+        public BluetoothDeviceWraper getDevice(int position) {
             return mLeDevices.get(position);
         }
 
@@ -251,7 +282,7 @@ public class DeviceScanActivity extends ListActivity {
             } else {
                 viewHolder = (ViewHolder) view.getTag();
             }
-            BluetoothDevice device = mLeDevices.get(i);
+            BluetoothDeviceWraper device = mLeDevices.get(i);
             final String deviceName = device.getName();
             if (deviceName != null && deviceName.length() > 0)
             	viewHolder.deviceName.setText(deviceName);
@@ -271,7 +302,7 @@ public class DeviceScanActivity extends ListActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mLeDeviceListAdapter.addDevice(device);
+                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper(device));
                     mLeDeviceListAdapter.notifyDataSetChanged();
                 }
             });
@@ -281,5 +312,28 @@ public class DeviceScanActivity extends ListActivity {
     static class ViewHolder {
         TextView deviceName;
         TextView deviceAddress;
+    }
+
+    private class BluetoothDeviceWraper {
+    	private String deviceName;
+    	private String deviceAddress;
+    	
+    	BluetoothDeviceWraper(String name, String address) {
+    		this.deviceName = name;
+    		this.deviceAddress = address;
+    	}
+
+    	BluetoothDeviceWraper(BluetoothDevice realDevice) {
+    		this.deviceName = realDevice.getName();
+    		this.deviceAddress = realDevice.getAddress();
+    	}
+ 
+    	String getName() {
+    		return this.deviceName;
+    	}
+
+    	String getAddress() {
+    		return this.deviceAddress;
+    	}
     }
 }

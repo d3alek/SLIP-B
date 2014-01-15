@@ -21,6 +21,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
@@ -32,9 +33,11 @@ public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
 
 	/** A list containing some sample data to show. */
 	private List<PeopleListItem> dataList;
+	private boolean useNewIcons;
 
-	public PeopleListAdapter(LayoutInflater inflator) {
+	public PeopleListAdapter(LayoutInflater inflator, boolean useNewIcons) {
 		super();
+		this.useNewIcons = useNewIcons;
 		this.inflator = inflator;
 		dataList = new ArrayList<PeopleListItem>();
 		List<Pair<String, String>> people = getPeople();
@@ -67,6 +70,10 @@ public class PeopleListAdapter extends BaseAdapter implements OnClickListener {
 
 			// Set the click listener for the checkbox
 			view.findViewById(R.id.checkBox1).setOnClickListener(this);
+		}
+		if (useNewIcons) {
+			ImageView v = (ImageView) view.findViewById(R.id.mug_icon);
+			v.setImageResource(R.drawable.cup_black);
 		}
 
 		PeopleListItem data = (PeopleListItem) getItem(position);

@@ -6,13 +6,12 @@ import inf.slip.b.meet4t.bluetooth.StatusListItem.MugStatus;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*/ {
@@ -22,9 +21,11 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 
 	/** A list containing some sample data to show. */
 	private List<StatusListItem> dataList;
+	private boolean useNewIcons;
 
-	public StatusListAdapter(LayoutInflater inflator, List<Pair<String, String>> people) {
+	public StatusListAdapter(LayoutInflater inflator, List<Pair<String, String>> people, boolean useNewIcons) {
 		super();
+		this.useNewIcons = useNewIcons;
 		this.inflator = inflator;
 		dataList = new ArrayList<StatusListItem>();
 		for (int i = 0; i < people.size(); i++) {
@@ -53,6 +54,14 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 		// We only create the view if its needed
 		if (view == null) {
 			view = inflator.inflate(R.layout.device_ack_list_item, null);
+		}
+		if (useNewIcons) {
+			ImageView v = (ImageView) view.findViewById(R.id.not_invited_yet);
+			v.setImageResource(R.drawable.cup_black);
+			v = (ImageView) view.findViewById(R.id.invited_accepted);
+			v.setImageResource(R.drawable.cup_green3);
+			v = (ImageView) view.findViewById(R.id.invited_declined);
+			v.setImageResource(R.drawable.cup_red2);
 		}
 
 		StatusListItem data = (StatusListItem) getItem(position);

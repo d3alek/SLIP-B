@@ -3,7 +3,6 @@ package inf.slip.b.meet4t.main;
 import inf.slip.b.meet4t.R;
 import inf.slip.b.meet4t.bluetooth.BluetoothLeService;
 import inf.slip.b.meet4t.bluetooth.DeviceScanActivity;
-import inf.slip.b.meet4t.bluetooth.MockDeviceScanActivity;
 import inf.slip.b.meet4t.bump.BumpFileActivity;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -22,7 +21,7 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
-	public static final String EXTRA_MODE = "mode";
+	public static final String EXTRAS_MODE = "mode";
 	private static final int REQUEST_ENABLE_BT = 2; // random # >0
 	private static final int REQUEST_SET_OWN_MUG = 1;
 	private BluetoothAdapter mBluetoothAdapter;
@@ -100,8 +99,8 @@ public class MainActivity extends Activity {
 	private void scanDevices(String mode) {
 		Intent intent;
 		if (mode != null) {
-			intent = new Intent(this, MockDeviceScanActivity.class);
-			intent.putExtra(EXTRA_MODE, mode);
+			intent = new Intent(this, /*Mock*/DeviceScanActivity.class);
+			intent.putExtra(EXTRAS_MODE, mode);
 		} else {;
 			intent = new Intent(this, DeviceScanActivity.class);
 		}
