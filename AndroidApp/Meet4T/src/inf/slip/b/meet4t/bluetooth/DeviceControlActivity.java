@@ -176,13 +176,13 @@ public class DeviceControlActivity extends ListActivity {
         	mode = getIntent().getExtras().getString(MainActivity.EXTRAS_MODE);
         }
         setContentView(R.layout.activity_control_device);
-        if (isDemo && getString(R.string.demo2).equals(mode)) {
+        if (!isDemo || getString(R.string.demo2).equals(mode)) {
         	getWindow().setBackgroundDrawableResource(R.drawable.light_blue_bg);
         } else {
         	getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
         }
         adapter = new StatusListAdapter(getLayoutInflater(), getPeople(null),
-        		(isDemo && getString(R.string.demo2).equals(mode)));
+        		(!isDemo || getString(R.string.demo2).equals(mode)));
         getListView().setAdapter(adapter);
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
@@ -203,7 +203,7 @@ public class DeviceControlActivity extends ListActivity {
             final boolean result = mBluetoothLeService.connect(mDeviceAddress);
             Log.d(TAG, "Connect request result=" + result);
         }
-        if (isDemo && getString(R.string.demo2).equals(mode)) {
+        if (!isDemo || getString(R.string.demo2).equals(mode)) {
         	ImageView v = (ImageView) getWindow().findViewById(R.id.main_bg);
         	v.setImageResource(R.drawable.light_blue_bg);
         } else {
@@ -296,9 +296,21 @@ public class DeviceControlActivity extends ListActivity {
     					mHandler.postDelayed(new Runnable() {
     						@Override
     						public void run() {
-    							adapter.assumeEveryoneElseDeclined();
+    							confirmListItem(mugQueue.get(2));
+    						}
+    					}, 3500);
+    					mHandler.postDelayed(new Runnable() {
+    						@Override
+    						public void run() {
+    							confirmListItem(mugQueue.get(1));
     						}
     					}, 4000);
+    					mHandler.postDelayed(new Runnable() {
+    						@Override
+    						public void run() {
+    							adapter.assumeEveryoneElseDeclined();
+    						}
+    					}, 5000);
     				}
     			} else {
     				// Do nothing

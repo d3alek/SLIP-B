@@ -75,7 +75,7 @@ public class DeviceScanActivity extends ListActivity {
             Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
             finish();
         }
-        if (isDemo && mode.equals(getString(R.string.demo2))) {
+        if (!isDemo || getString(R.string.demo2).equals(mode)) {
         	getWindow().setBackgroundDrawableResource(R.drawable.light_blue_bg);
         } else {
         	getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
@@ -155,14 +155,14 @@ public class DeviceScanActivity extends ListActivity {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper("Mock kettle 1", "00:11:22:33:AA:BB"));
+                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper("Conference room 1", "00:11:22:33:AA:BB"));
                     mLeDeviceListAdapter.notifyDataSetChanged();
                 }
             }, TIME_UNTIL_FIRST_MOCK);
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper("Mock kettle 2", "AA:BB:00:11:22:33"));
+                    mLeDeviceListAdapter.addDevice(new BluetoothDeviceWraper("Conference room 2", "AA:BB:00:11:22:33"));
                     mLeDeviceListAdapter.notifyDataSetChanged();
                 }
             }, TIME_UNTIL_SECOND_MOCK);

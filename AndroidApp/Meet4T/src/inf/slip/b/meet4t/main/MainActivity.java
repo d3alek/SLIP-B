@@ -99,7 +99,7 @@ public class MainActivity extends Activity {
 	private void scanDevices(String mode) {
 		Intent intent;
 		if (mode != null) {
-			intent = new Intent(this, /*Mock*/DeviceScanActivity.class);
+			intent = new Intent(this, DeviceScanActivity.class);
 			intent.putExtra(EXTRAS_MODE, mode);
 		} else {;
 			intent = new Intent(this, DeviceScanActivity.class);

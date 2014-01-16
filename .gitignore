@@ -5,4 +5,5 @@ _build
 *.log
 AndroidApp/Meet4T/bin/*
 AndroidApp/Meet4T/gen/*
-
+AndroidApp/Meet4TTestTest/bin/*
+AndroidApp/Meet4TTestTest/gen/*

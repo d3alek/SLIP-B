@@ -20,7 +20,7 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 	private LayoutInflater inflator;
 
 	/** A list containing some sample data to show. */
-	private List<StatusListItem> dataList;
+	private ArrayList<StatusListItem> dataList;
 	private boolean useNewIcons;
 
 	public StatusListAdapter(LayoutInflater inflator, List<Pair<String, String>> people, boolean useNewIcons) {
@@ -43,6 +43,10 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 		return dataList.get(position);
 	}
 
+	/**
+	 * Not using this method. Hench the hacky implementation.
+	 * Only created because it must be implemented, as per interface.
+	 */
 	@Override
 	public long getItemId(int position) {
 		return position;
@@ -100,12 +104,6 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 		return view;
 	}
 
-//	@Override
-//	public void onClick(View view) {
-//		StatusListItem data = (StatusListItem) view.getTag();
-//		Log.d("Cat", "clicked " + data.getName());
-//	}
-
 	/**
 	 * Return null if list has no such mugID
 	 * @param mugID 16 character string
@@ -120,7 +118,6 @@ public class StatusListAdapter extends BaseAdapter /*implements OnClickListener*
 	}
 
 	public void addItems(List<Pair<String, String>> people) {
-		dataList = new ArrayList<StatusListItem>();
 		for (int i = 0; i < people.size(); i++) {
 			dataList.add(new StatusListItem(people.get(i).first, people.get(i).second, MugStatus.NOT_YET_INVITED));
 		}

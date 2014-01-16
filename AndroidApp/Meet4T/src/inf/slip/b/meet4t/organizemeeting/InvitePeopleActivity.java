@@ -26,14 +26,14 @@ public class InvitePeopleActivity extends ListActivity {
 			if (isDemo) {
 				mode = getIntent().getExtras().getString(MainActivity.EXTRAS_MODE);
 			}
-			if (isDemo && getString(R.string.demo2).equals(mode)) {
+			if (!isDemo || getString(R.string.demo2).equals(mode)) {
 	        	ImageView v = (ImageView) getWindow().findViewById(R.id.invite_people_list_bg);
 	        	v.setImageResource(R.drawable.light_blue_bg);
 	        } else {
 	        	getWindow().setBackgroundDrawableResource(R.drawable.canvas_bg_2);
 	        }
 			adapter = new PeopleListAdapter(
-					getLayoutInflater(), (isDemo && getString(R.string.demo2).equals(mode)));
+					getLayoutInflater(), (!isDemo || getString(R.string.demo2).equals(mode)));
 			Button invitePeopleButton = new Button(this);
 			invitePeopleButton.setOnClickListener(new View.OnClickListener() {
 	            public void onClick(View v) {
